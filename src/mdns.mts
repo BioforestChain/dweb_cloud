@@ -14,27 +14,37 @@ export const startMdnsServer = (hostname: string) => {
   mdns.on("response", function (response) {
     // console.log("got a response packet:", response);
   });
-  mdns.on("query", function (query) {
-    // console.log("got a query packet:", query);
+  mdns.on("query", function (query, rinfo) {
+    console.debug("got a query packet:", query, rinfo);
     const r: ResponseOutgoingPacket = { answers: [] };
     for (const question of query.questions) {
-      // console.log("question", question);
       if (
         question.type === "A" &&
         (question.name === hostname || question.name.endsWith(suffix_host))
       ) {
         r.answers.push(
-          ...ipv4List.map(
-            (ipv4) =>
-              ({
-                name: question.name,
-                type: question.type,
-                class: "IN",
-                ttl: 300,
-                flash: true,
-                data: ipv4,
-              } as any)
-          )
+          ...ipv4List
+            /// 根据掩码，过滤出局域网
+            .filter((ipv4) => {
+              return (
+                ipv4.masterAddress ===
+                getMasterAddress({
+                  address: rinfo.address,
+                  netmask: ipv4.netmask,
+                })
+              );
+            })
+            .map(
+              (ipv4) =>
+                ({
+                  name: question.name,
+                  type: question.type,
+                  class: "IN",
+                  ttl: 300,
+                  flash: true,
+                  data: ipv4.address,
+                } as any)
+            )
         );
       }
     }
@@ -43,11 +53,15 @@ export const startMdnsServer = (hostname: string) => {
       mdns.respond(r);
     }
   });
-  console.log("mdns server started", getWlanIpv4List(), `*${suffix_host}`);
+  console.debug("mdns server started", getWlanIpv4List(), `*${suffix_host}`);
 };
 
 const getWlanIpv4List = () => {
-  const ipv4List: string[] = [];
+  const ipv4List: Array<{
+    address: string;
+    netmask: string;
+    masterAddress: number;
+  }> = [];
   for (const networkInterface of Object.values(os.networkInterfaces()).flat()) {
     if (
       networkInterface == null ||
@@ -56,9 +70,26 @@ const getWlanIpv4List = () => {
     ) {
       continue;
     }
-    ipv4List.push(networkInterface.address);
+    ipv4List.push({
+      address: networkInterface.address,
+      netmask: networkInterface.netmask,
+      masterAddress: getMasterAddress(networkInterface),
+    });
   }
   return ipv4List;
+};
+
+const getMasterAddress = (info: { address: string; netmask: string }) => {
+  const address = ip_to_number(info.address);
+  const netmask = ip_to_number(info.netmask);
+  return address & netmask;
+};
+const pow24 = 2 ** 24;
+const pow16 = 2 ** 16;
+const pow8 = 2 ** 8;
+const ip_to_number = (ip: string) => {
+  const [a, b, c, d] = ip.split(".").map(Number);
+  return a * pow24 + b * pow16 + c * pow8 + d;
 };
 
 if (import_meta_ponyfill(import.meta).main) {

@@ -2,9 +2,9 @@ import http from "node:http";
 import z from "zod";
 import { dnsTable } from "./dns-table.mts";
 
+import { authRequestWithBody } from "../helper/auth-request.mts";
 import { ResponseError } from "../helper/response-error.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
-import { authRequestWithBody } from "../helper/auth-request.mts";
 
 export const $RegistryInfo = z.object({
   auth: z.union([
@@ -20,7 +20,7 @@ export const $RegistryInfo = z.object({
   service: z.union([
     z.object({
       mode: z.enum(["http"]),
-      hostname: z.string(),
+      hostname: z.string().nullish(),
       port: z.number(),
     }),
     z.object({
@@ -37,6 +37,7 @@ export const $RegistryInfo = z.object({
 });
 export type RegistryInfo = typeof $RegistryInfo._type;
 export const registry = async (
+  gateway: { hostname: string; port: number },
   req: http.IncomingMessage,
   res: http.ServerResponse
 ) => {
@@ -66,14 +67,32 @@ export const registry = async (
       res
     );
   }
-
-  if (from_hostname !== registryInfo.service.hostname) {
-    throw new ResponseError(403, "fail to registry, hostname no match.").end(
-      res
-    );
+  // /// 发起域名要和注册的域名一致
+  // if (from_hostname !== registryInfo.service.hostname) {
+  //   throw new ResponseError(403, "fail to registry, hostname no match.").end(
+  //     res
+  //   );
+  // }
+  /// 注册的域名要归属于网关
+  let hostname_suffix: string;
+  if (gateway.hostname.endsWith(".local")) {
+    hostname_suffix = `-${gateway.hostname}`;
+  } else {
+    hostname_suffix = `.${gateway.hostname}`;
+  }
+  if (false === from_hostname.endsWith(hostname_suffix)) {
+    throw new ResponseError(
+      403,
+      "fail to registry, hostname no belongs to gateway."
+    ).end(res);
   }
 
-  //   const address = signUtil.secret
-  dnsTable.set(registryInfo.service.hostname, registryInfo.service);
-  return registryInfo.service.hostname;
+  dnsTable.set(from_hostname, {
+    ...registryInfo.service,
+    hostname: registryInfo.service.hostname ?? "127.0.0.1",
+  });
+
+  const registry_host = `${from_hostname}:${gateway.port}`;
+  console.log("registry host:", registry_host);
+  res.end(registry_host);
 };

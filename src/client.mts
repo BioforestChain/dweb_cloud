@@ -14,6 +14,7 @@ export const $RegistryArgs = z.object({
   algorithm: z.enum(["bioforestchain"]),
   service: z.object({
     mode: z.enum(["http"]),
+    hostname: z.string().nullish(),
     port: z.number(),
   }),
 });
@@ -27,9 +28,15 @@ export const registry = async (args: RegistryArgs) => {
       : keypair_or_secret;
   const gateway_url = new URL(gateway);
   const { hostname: gateway_hostname } = gateway_url;
+
   const address = await bfmetaSignUtil.getAddressFromPublicKey(
     keypair.publicKey
   );
+  const my_hostname = (
+    gateway_hostname.endsWith(".local")
+      ? `${address}-${gateway_hostname}`
+      : `${address}.${gateway_hostname}`
+  ).toLowerCase();
   const info = {
     auth: {
       algorithm: args.algorithm,
@@ -37,9 +44,7 @@ export const registry = async (args: RegistryArgs) => {
     },
     service: {
       mode: "http",
-      hostname: (gateway_hostname.endsWith(".local")
-        ? `${address}-${gateway_hostname}`
-        : `${address}.${gateway_hostname}`).toLowerCase(),
+      hostname: args.service.hostname,
       port: args.service.port,
     },
   } satisfies RegistryInfo;
@@ -49,7 +54,7 @@ export const registry = async (args: RegistryArgs) => {
   const method = "POST";
   const headers = await signRequestWithBody(
     keypair,
-    info.service.hostname,
+    my_hostname,
     api_url,
     method,
     body
@@ -65,7 +70,7 @@ export const registry = async (args: RegistryArgs) => {
 
 export const signRequestWithBody = async (
   keypair: Keypair,
-  from_hostname: string,
+  origin_hostname: string,
   api_url: URL,
   method: string,
   body: Buffer
@@ -73,7 +78,7 @@ export const signRequestWithBody = async (
   const headers: Record<string, string> = {};
   const { hostname: to_hostname, pathname, search } = api_url;
   headers["x-dweb-cloud-host"] = to_hostname;
-  headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${from_hostname}`;
+  headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${origin_hostname}`;
   const signMsg = Buffer.concat([
     Buffer.from(
       [
@@ -81,7 +86,7 @@ export const signRequestWithBody = async (
         method.toUpperCase() + " " + pathname + search,
         /// HEAD
         `ALGORITHM bioforestchain`,
-        `FROM ${from_hostname}`,
+        `FROM ${origin_hostname}`,
         `TO ${to_hostname}`,
       ].join("\n") + "\n"
     ),
@@ -96,9 +101,9 @@ export const signRequestWithBody = async (
   headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
   headers["x-dweb-cloud-signature"] = toSafeBuffer(signature as Buffer);
 
-  console.log("signMsg", signMsg.toString());
-  console.log("signature", signature.toString("hex"));
-  console.log("publicKey", keypair.publicKey.toString("hex"));
+  console.debug("signMsg", signMsg.toString());
+  console.debug("signature", signature.toString("hex"));
+  console.debug("publicKey", keypair.publicKey.toString("hex"));
   return headers;
 };
 

@@ -52,9 +52,9 @@ export const authRequestWithBody = async (
     /// BODY
     rawBody,
   ]);
-  console.log("signMsg", signMsg.toString());
-  console.log("signature", signature.toString("hex"));
-  console.log("publicKey", publicKey.toString("hex"));
+  console.debug("signMsg", signMsg.toString());
+  console.debug("signature", signature.toString("hex"));
+  console.debug("publicKey", publicKey.toString("hex"));
   if (
     false ===
     (await bfmetaSignUtil.detachedVeriy(

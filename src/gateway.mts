@@ -1,23 +1,24 @@
-import http from "node:http";
-import { Buffer } from "node:buffer";
-import { AddressInfo } from "node:net";
-import z from "zod";
-import { startMdnsServer } from "./mdns.mts";
 import import_meta_ponyfill from "import-meta-ponyfill";
-import { getDefaultHost, getDefaultPort } from "./args.mts";
-import { registry } from "./api/registry.mts";
+import http from "node:http";
+import { AddressInfo } from "node:net";
 import { dnsTable } from "./api/dns-table.mts";
+import { registry } from "./api/registry.mts";
+import { getDefaultHost, getDefaultPort } from "./args.mts";
+import { startMdnsServer } from "./mdns.mts";
+import { setupVerbose } from "./helper/logger.mts";
 const startGateway = (host: string, port: number) => {
   let origin = host;
   if (false == origin.includes("://")) {
     origin = "http://" + host;
   }
   const origin_url = new URL(origin);
-  const safe_hostname = origin_url.hostname;
-  const safe_port = origin_url.port ? +origin_url.port : port;
+  const gateway = {
+    hostname: origin_url.hostname,
+    port: origin_url.port ? +origin_url.port : port,
+  };
 
-  if (safe_hostname.endsWith(".local")) {
-    startMdnsServer(safe_hostname);
+  if (gateway.hostname.endsWith(".local")) {
+    startMdnsServer(gateway.hostname);
   }
 
   const server = http.createServer(async (req, res) => {
@@ -25,12 +26,11 @@ const startGateway = (host: string, port: number) => {
     const hostname = req.headers.host?.split(":").at(0);
     if (hostname && dnsTable.has(hostname)) {
       const target = dnsTable.get(hostname)!;
+      console.log("gateway", hostname, "=>", target);
       const { pathname, search } = new URL(`http://localhost${req.url ?? "/"}`);
       const forwarded_req = http.request(
         {
-          hostname: target.hostname.endsWith(".local")
-            ? "0.0.0.0"
-            : target.hostname,
+          hostname: target.hostname,
           port: target.port,
           method: req.method,
           pathname,
@@ -47,24 +47,25 @@ const startGateway = (host: string, port: number) => {
 
     /// 本级服务
     if (req.url === "/registry") {
-      return await registry(req, res);
+      return await registry(gateway, req, res);
     }
     res.statusCode = 404;
     return res.end("Not Found");
   });
 
   const job = Promise.withResolvers<AddressInfo>();
-  server.listen(safe_port, () => {
+  server.listen(gateway.port, () => {
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
-    console.log(
-      `Dweb Gateway Server Listening http://${addressInfo.address}:${addressInfo.port}`
+    console.info(
+      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`
     );
   });
   return job.promise;
 };
 
 if (import_meta_ponyfill(import.meta).main) {
+  setupVerbose();
   const hostname = await getDefaultHost();
   const port = await getDefaultPort();
   await startGateway(hostname, port);
