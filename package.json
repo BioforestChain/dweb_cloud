@@ -1,0 +1,20 @@
+{
+  "name": "dweb-cloud",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/multicast-dns": "^7.2.4",
+    "@types/node": "^22.9.0"
+  },
+  "dependencies": {
+    "@gaubee/util": "^0.13.0",
+    "multicast-dns": "^7.2.5"
+  }
+}

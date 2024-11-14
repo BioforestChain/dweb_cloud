@@ -1,0 +1,93 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      '@gaubee/util':
+        specifier: ^0.13.0
+        version: 0.13.0
+      multicast-dns:
+        specifier: ^7.2.5
+        version: 7.2.5
+    devDependencies:
+      '@types/multicast-dns':
+        specifier: ^7.2.4
+        version: 7.2.4
+      '@types/node':
+        specifier: ^22.9.0
+        version: 22.9.0
+
+packages:
+
+  '@gaubee/util@0.13.0':
+    resolution: {integrity: sha512-Zn5GOAvaJS5l7i4XMRN8Y6FGbiiLRdMBPAgD8lVuyoRIb/wIDmvxTNQImKW2D21C8X4wWrM8NjmOFazFp6TCXg==}
+
+  '@leichtgewicht/ip-codec@2.0.5':
+    resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
+
+  '@types/dns-packet@5.6.5':
+    resolution: {integrity: sha512-qXOC7XLOEe43ehtWJCMnQXvgcIpv6rPmQ1jXT98Ad8A3TB1Ue50jsCbSSSyuazScEuZ/Q026vHbrOTVkmwA+7Q==}
+
+  '@types/multicast-dns@7.2.4':
+    resolution: {integrity: sha512-ib5K4cIDR4Ro5SR3Sx/LROkMDa0BHz0OPaCBL/OSPDsAXEGZ3/KQeS6poBKYVN7BfjXDL9lWNwzyHVgt/wkyCw==}
+
+  '@types/node@22.9.0':
+    resolution: {integrity: sha512-vuyHg81vvWA1Z1ELfvLko2c8f34gyA0zaic0+Rllc5lbCnbSyuvb2Oxpm6TAUAC/2xZN3QGqxBNggD1nNR2AfQ==}
+
+  dns-packet@5.6.1:
+    resolution: {integrity: sha512-l4gcSouhcgIKRvyy99RNVOgxXiicE+2jZoNmaNmZ6JXiGajBOJAesk1OBlJuM5k2c+eudGdLxDqXuPCKIj6kpw==}
+    engines: {node: '>=6'}
+
+  multicast-dns@7.2.5:
+    resolution: {integrity: sha512-2eznPJP8z2BFLX50tf0LuODrpINqP1RVIm/CObbTcBRITQgmC/TjcREF1NeTBzIcR5XO/ukWo+YHOjBbFwIupg==}
+    hasBin: true
+
+  thunky@1.1.0:
+    resolution: {integrity: sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA==}
+
+  tslib@2.8.1:
+    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
+
+  undici-types@6.19.8:
+    resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
+
+snapshots:
+
+  '@gaubee/util@0.13.0':
+    dependencies:
+      tslib: 2.8.1
+
+  '@leichtgewicht/ip-codec@2.0.5': {}
+
+  '@types/dns-packet@5.6.5':
+    dependencies:
+      '@types/node': 22.9.0
+
+  '@types/multicast-dns@7.2.4':
+    dependencies:
+      '@types/dns-packet': 5.6.5
+      '@types/node': 22.9.0
+
+  '@types/node@22.9.0':
+    dependencies:
+      undici-types: 6.19.8
+
+  dns-packet@5.6.1:
+    dependencies:
+      '@leichtgewicht/ip-codec': 2.0.5
+
+  multicast-dns@7.2.5:
+    dependencies:
+      dns-packet: 5.6.1
+      thunky: 1.1.0
+
+  thunky@1.1.0: {}
+
+  tslib@2.8.1: {}
+
+  undici-types@6.19.8: {}
