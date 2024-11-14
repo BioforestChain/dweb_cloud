@@ -8,12 +8,24 @@ importers:
 
   .:
     dependencies:
+      '@bfmeta/sign-util':
+        specifier: ^1.1.1
+        version: 1.1.1
       '@gaubee/util':
         specifier: ^0.13.0
         version: 0.13.0
+      '@std/cli':
+        specifier: npm:@jsr/std__cli@^1.0.6
+        version: '@jsr/std__cli@1.0.6'
+      import-meta-ponyfill:
+        specifier: ^3.2.1
+        version: 3.2.1
       multicast-dns:
         specifier: ^7.2.5
         version: 7.2.5
+      zod:
+        specifier: ^3.23.8
+        version: 3.23.8
     devDependencies:
       '@types/multicast-dns':
         specifier: ^7.2.4
@@ -24,8 +36,14 @@ importers:
 
 packages:
 
+  '@bfmeta/sign-util@1.1.1':
+    resolution: {integrity: sha512-i+5f24uyVqca0pzWELy0JZUnhpn3OJz+NV7YmF0xIj57tsodC9PXJCkIGouYSozdLI6kLyJsnosA63QDmOgKSQ==}
+
   '@gaubee/util@0.13.0':
     resolution: {integrity: sha512-Zn5GOAvaJS5l7i4XMRN8Y6FGbiiLRdMBPAgD8lVuyoRIb/wIDmvxTNQImKW2D21C8X4wWrM8NjmOFazFp6TCXg==}
+
+  '@jsr/std__cli@1.0.6':
+    resolution: {integrity: sha512-aWfDn9Hsr8wGI1D0nX4o1ADCt93gerYy3bU7zXrlymxD1HXTWj3EfgOq2/cKmpcTmR/PWBensX4AnenprWb9cA==, tarball: https://npm.jsr.io/~/11/@jsr/std__cli/1.0.6.tgz}
 
   '@leichtgewicht/ip-codec@2.0.5':
     resolution: {integrity: sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw==}
@@ -43,6 +61,9 @@ packages:
     resolution: {integrity: sha512-l4gcSouhcgIKRvyy99RNVOgxXiicE+2jZoNmaNmZ6JXiGajBOJAesk1OBlJuM5k2c+eudGdLxDqXuPCKIj6kpw==}
     engines: {node: '>=6'}
 
+  import-meta-ponyfill@3.2.1:
+    resolution: {integrity: sha512-2dwCESkA/LyTF/YMWRR5v7DWfzqFqodiUTmgu6MjhkpO0rFAerPgdUtvVc0t7rsezL55nK1eqlTILW9WiLvDEQ==}
+
   multicast-dns@7.2.5:
     resolution: {integrity: sha512-2eznPJP8z2BFLX50tf0LuODrpINqP1RVIm/CObbTcBRITQgmC/TjcREF1NeTBzIcR5XO/ukWo+YHOjBbFwIupg==}
     hasBin: true
@@ -56,11 +77,20 @@ packages:
   undici-types@6.19.8:
     resolution: {integrity: sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==}
 
+  zod@3.23.8:
+    resolution: {integrity: sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==}
+
 snapshots:
+
+  '@bfmeta/sign-util@1.1.1':
+    dependencies:
+      tslib: 2.8.1
 
   '@gaubee/util@0.13.0':
     dependencies:
       tslib: 2.8.1
+
+  '@jsr/std__cli@1.0.6': {}
 
   '@leichtgewicht/ip-codec@2.0.5': {}
 
@@ -81,6 +111,8 @@ snapshots:
     dependencies:
       '@leichtgewicht/ip-codec': 2.0.5
 
+  import-meta-ponyfill@3.2.1: {}
+
   multicast-dns@7.2.5:
     dependencies:
       dns-packet: 5.6.1
@@ -91,3 +123,5 @@ snapshots:
   tslib@2.8.1: {}
 
   undici-types@6.19.8: {}
+
+  zod@3.23.8: {}

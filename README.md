@@ -24,16 +24,18 @@
 3. Registry MicroService
 
    ```ts
-   import { registry } from "@dweb-cloud/core";
+   import { registry, signRequestWithBody } from "@dweb-cloud/client";
 
-   registry({
+   const keypair = process.env.BIOFOREST_CHAIN_SECRET;
+
+   const { url, body } = registry({
      /** dweb-cloud 网关 */
      gateway: "http://localhost:80",
      /** 认证，会根据认证方式获得不同的域名 */
      auth: {
-       /**生物链林的私钥标准 */
+       /**生物链林的密钥标准 */
        mode: "BioforestChain",
-       privateKey: Buffer.from(process.env.PRIVATE_KEY),
+       publicKey: keypair.publicKey,
      },
      service: {
        /**
@@ -51,4 +53,6 @@
        script: process.env.SERVICE_SCRIPT,
      },
    });
+
+   const headers = signRequestWithBody(keypair.privateKey);
    ```
