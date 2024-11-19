@@ -2,7 +2,8 @@ import makeMdns, { ResponseOutgoingPacket } from "multicast-dns";
 import os from "node:os";
 import import_meta_ponyfill from "import-meta-ponyfill";
 import { getDefaultHost } from "./args.mts";
-export const startMdnsServer = (hostname: string) => {
+import { dnsTable } from "./api/dns-table.mts";
+export const startMdnsServer = (hostname: string, port = 80) => {
   if (hostname.split(".").length > 2) {
     throw new Error(
       "The '.local' domain does not support subdomains and must be in the top-level domain."
@@ -12,13 +13,70 @@ export const startMdnsServer = (hostname: string) => {
   const mdns = makeMdns();
   const ipv4List = getWlanIpv4List();
   mdns.on("response", function (response) {
-    // console.log("got a response packet:", response);
+    console.debug("got a response packet:", response);
   });
   mdns.on("query", function (query, rinfo) {
-    console.debug("got a query packet:", query, rinfo);
-    const r: ResponseOutgoingPacket = { answers: [] };
+    console.debug("got a query packet=", query.questions, "rinfo=", rinfo);
+    let r: ResponseOutgoingPacket = { answers: [] };
     for (const question of query.questions) {
-      if (
+      if (question.type === "PTR" && question.name === "_http._tcp.local") {
+        r = {
+          answers: [
+            {
+              name: "_http._tcp.local",
+              type: "PTR",
+              data: "dweb_cloud._http._tcp.local",
+            },
+            {
+              name: "dweb_cloud._http._tcp.local",
+              type: "SRV",
+              data: {
+                port: port,
+                weight: 0,
+                priority: 0,
+                target: hostname,
+              },
+            },
+          ],
+        };
+        // console.log(r.answers)
+      } else if (
+        question.type === "SRV" &&
+        question.name === "dweb_cloud._http._tcp.local"
+      ) {
+        r.answers.push(
+          {
+            name: "dweb_cloud._http._tcp.local",
+            type: "SRV",
+            data: {
+              port: port,
+              target: hostname,
+            },
+          },
+          ...ipv4List
+            /// 根据掩码，过滤出局域网
+            .filter((ipv4) => {
+              return (
+                ipv4.masterAddress ===
+                getMasterAddress({
+                  address: rinfo.address,
+                  netmask: ipv4.netmask,
+                })
+              );
+            })
+            .map((ipv4) => {
+              return [...dnsTable.entries()].map(([hostname, record]) => {
+                return {
+                  name: hostname,
+                  type: "A",
+                  ttl: 30,
+                  data: ipv4.address,
+                } as any;
+              });
+            })
+            .flat()
+        );
+      } else if (
         question.type === "A" &&
         (question.name === hostname || question.name.endsWith(suffix_host))
       ) {
@@ -38,7 +96,7 @@ export const startMdnsServer = (hostname: string) => {
               (ipv4) =>
                 ({
                   name: question.name,
-                  type: question.type,
+                  type: "A",
                   class: "IN",
                   ttl: 300,
                   flash: true,

@@ -39,7 +39,7 @@ export const $RegistryInfo = z.object({
 });
 export type RegistryInfo = typeof $RegistryInfo._type;
 export const registry = async (
-  gateway: { hostname: string; port: number },
+  gateway: { protocol: string; hostname: string; port: number },
   req: http.IncomingMessage,
   res: http.ServerResponse,
 ) => {
@@ -94,7 +94,7 @@ export const registry = async (
     address,
   });
 
-  const registry_host = `${from_hostname}:${gateway.port}`;
+  const registry_host = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   console.log("registry host:", registry_host);
   return responseText(res, registry_host);
 };
