@@ -12,8 +12,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1
       '@gaubee/util':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.14.4
+        version: 0.14.4
       '@std/cli':
         specifier: npm:@jsr/std__cli@^1.0.6
         version: '@jsr/std__cli@1.0.6'
@@ -39,8 +39,8 @@ packages:
   '@bfmeta/sign-util@1.1.1':
     resolution: {integrity: sha512-i+5f24uyVqca0pzWELy0JZUnhpn3OJz+NV7YmF0xIj57tsodC9PXJCkIGouYSozdLI6kLyJsnosA63QDmOgKSQ==}
 
-  '@gaubee/util@0.13.0':
-    resolution: {integrity: sha512-Zn5GOAvaJS5l7i4XMRN8Y6FGbiiLRdMBPAgD8lVuyoRIb/wIDmvxTNQImKW2D21C8X4wWrM8NjmOFazFp6TCXg==}
+  '@gaubee/util@0.14.4':
+    resolution: {integrity: sha512-RS5pgjnuV5bGLdCaVGPQE9QM10tEa8tWoOKHULlxSHW5rca5qqlPwC+V1EZfVtB+qjHXtJ/il1ofkRCQY1glqg==}
 
   '@jsr/std__cli@1.0.6':
     resolution: {integrity: sha512-aWfDn9Hsr8wGI1D0nX4o1ADCt93gerYy3bU7zXrlymxD1HXTWj3EfgOq2/cKmpcTmR/PWBensX4AnenprWb9cA==, tarball: https://npm.jsr.io/~/11/@jsr/std__cli/1.0.6.tgz}
@@ -86,7 +86,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@gaubee/util@0.13.0':
+  '@gaubee/util@0.14.4':
     dependencies:
       tslib: 2.8.1
 

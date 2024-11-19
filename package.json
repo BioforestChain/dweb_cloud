@@ -1,5 +1,5 @@
 {
-  "name": "dweb-cloud",
+  "name": "@dweb/cloud",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@bfmeta/sign-util": "^1.1.1",
-    "@gaubee/util": "^0.13.0",
+    "@gaubee/util": "^0.14.4",
     "@std/cli": "npm:@jsr/std__cli@^1.0.6",
     "import-meta-ponyfill": "^3.2.1",
     "multicast-dns": "^7.2.5",

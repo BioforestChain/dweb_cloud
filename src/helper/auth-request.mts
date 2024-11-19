@@ -2,13 +2,113 @@ import http from "node:http";
 import z from "zod";
 import { getReqBody } from "./income-message.mts";
 import { Buffer } from "node:buffer";
-import { safeBufferFrom } from "./safe-buffer-code.mts";
+import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
 import { bfmetaSignUtil } from "./bfmeta-sign-util.mts";
 import { ResponseError } from "./response-error.mts";
 
+export const signRequest = async (
+  keypair: Keypair,
+  origin_hostname: string,
+  api_url: URL,
+  method: string,
+  body?: Buffer,
+) => {
+  const headers: Record<string, string> = {};
+  const { hostname: to_hostname, pathname, search } = api_url;
+  headers["x-dweb-cloud-host"] = to_hostname;
+  headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${origin_hostname}`;
+  const noise = crypto.randomUUID();
+  headers["x-dweb-cloud-noise"] = `${noise}`;
+  const header = Buffer.from(
+    [
+      /// METHOD + URL
+      method.toUpperCase() + " " + pathname + search,
+      /// HEAD
+      `ALGORITHM bioforestchain`,
+      `FROM ${origin_hostname}`,
+      `TO ${to_hostname}`,
+      `NOISE ${noise}`,
+    ].join("\n") + "\n",
+  );
+  const signMsg = body ? Buffer.concat([header, body]) : header;
+
+  const signature = await bfmetaSignUtil.detachedSign(
+    signMsg,
+    keypair.privateKey,
+  );
+  headers["x-dweb-cloud-algorithm"] = "bioforestchain";
+  headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
+  headers["x-dweb-cloud-signature"] = toSafeBuffer(signature as Buffer);
+
+  console.debug("signMsg", signMsg.toString());
+  console.debug("signature", signature.toString("hex"));
+  console.debug("publicKey", keypair.publicKey.toString("hex"));
+  return headers;
+};
+
+export const verifyRequest = (
+  req_url: string,
+  req_method: string,
+  req_headers: Headers,
+  req_body?: Buffer,
+) => {
+  let safe_req_url = req_url;
+  if (req_url.startsWith("http://") || req_url.startsWith("https://")) {
+    const { pathname, search } = new URL(req_url);
+    safe_req_url = pathname + search;
+  }
+  const to_hostname = z
+    .string({ required_error: "no found header x-dweb-cloud-host" })
+    .parse(req_headers.get("x-dweb-cloud-host"));
+  const from_hostname = z
+    .string({ required_error: "no found header x-dweb-cloud-origin" })
+    .parse(req_headers.get("x-dweb-cloud-origin"))
+    .split("://")[1];
+  const noise = z
+    .string({ required_error: "no found header x-dweb-cloud-noise" })
+    .parse(req_headers.get("x-dweb-cloud-noise"));
+
+  const publicKey = safeBufferFrom(
+    z
+      .string({ required_error: "no found header x-dweb-cloud-public-key" })
+      .parse(req_headers.get("x-dweb-cloud-public-key")),
+  );
+  const signature = safeBufferFrom(
+    z
+      .string({ required_error: "no found header x-dweb-cloud-signature" })
+      .parse(req_headers.get("x-dweb-cloud-signature")),
+  );
+  const verify = () => {
+    const header = Buffer.from(
+      [
+        /// METHOD + URL
+        req_method.toUpperCase() + " " + safe_req_url,
+        /// HEAD
+        `ALGORITHM bioforestchain`,
+        `FROM ${from_hostname}`,
+        `TO ${to_hostname}`,
+        `NOISE ${noise}`,
+      ].join("\n") + "\n",
+    );
+    const signMsg = req_body ? Buffer.concat([header, req_body]) : header;
+    return bfmetaSignUtil.detachedVeriy(signMsg, signature, publicKey);
+  };
+  return {
+    verify,
+    publicKey,
+    from_hostname,
+    to_hostname,
+  };
+};
+
+export type Keypair = {
+  privateKey: Buffer;
+  publicKey: Buffer;
+};
+
 export const authRequestWithBody = async (
   req: http.IncomingMessage,
-  res: http.ServerResponse
+  res: http.ServerResponse,
 ) => {
   const algorithm = z
     .string({ required_error: "require algorithm" })
@@ -16,55 +116,26 @@ export const authRequestWithBody = async (
   if (algorithm !== "bioforestchain") {
     throw new ResponseError(
       500,
-      `Not yet support sign algorithm: ${algorithm}`
+      `Not yet support sign algorithm: ${algorithm}`,
     ).end(res);
   }
-  const publicKey = safeBufferFrom(
-    z
-      .string({ required_error: "require publicKey" })
-      .parse(req.headers["x-dweb-cloud-public-key"])
-  );
-  const signature = safeBufferFrom(
-    z
-      .string({ required_error: "require signature" })
-      .parse(req.headers["x-dweb-cloud-signature"])
-  );
-  const host = z
-    .string({ required_error: "require host" })
-    .parse(req.headers["x-dweb-cloud-host"] || req.headers.host);
-  const origin = z
-    .string({ required_error: "require origin" })
-    .parse(req.headers["x-dweb-cloud-origin"] || req.headers.origin);
-  const from_hostname = new URL(origin).hostname;
-  const to_hostname = new URL(`http://${host}`).hostname;
-  const rawBody = await getReqBody(req);
-  const signMsg = Buffer.concat([
-    Buffer.from(
-      [
-        /// METHOD + URL
-        req.method?.toUpperCase() + " " + (req.url ?? "/"),
-        /// HEAD
-        `ALGORITHM ${algorithm}`,
-        `FROM ${from_hostname}`,
-        `TO ${to_hostname}`,
-      ].join("\n") + "\n"
-    ),
-    /// BODY
+  const req_method = req.method ?? "GET";
+  let rawBody: Buffer | undefined;
+  if (req_method !== "GET" && +(req.headers["content-length"] ?? 0) > 0) {
+    rawBody = await getReqBody(req);
+  }
+  const { verify, ...info } = verifyRequest(
+    req.url ?? "/",
+    req_method,
+    new Headers(req.headers as Record<string, string>),
     rawBody,
-  ]);
-  console.debug("signMsg", signMsg.toString());
-  console.debug("signature", signature.toString("hex"));
-  console.debug("publicKey", publicKey.toString("hex"));
-  if (
-    false ===
-    (await bfmetaSignUtil.detachedVeriy(
-      /// 必须对来源和意向进行详细的签名，避免被盗签
-      signMsg,
-      signature,
-      publicKey
-    ))
-  ) {
+  );
+  if (false === (await verify())) {
     throw new ResponseError(401, "fail to veriy").end(res);
   }
-  return { publicKey, rawBody, from_hostname, to_hostname };
+  return {
+    ...info,
+    address: await bfmetaSignUtil.getAddressFromPublicKey(info.publicKey),
+    rawBody,
+  };
 };

@@ -6,6 +6,7 @@ import { registry } from "./api/registry.mts";
 import { getDefaultHost, getDefaultPort } from "./args.mts";
 import { startMdnsServer } from "./mdns.mts";
 import { setupVerbose } from "./helper/logger.mts";
+import { query } from "./api/query.mts";
 const startGateway = (host: string, port: number) => {
   let origin = host;
   if (false == origin.includes("://")) {
@@ -33,21 +34,24 @@ const startGateway = (host: string, port: number) => {
           hostname: target.hostname,
           port: target.port,
           method: req.method,
-          pathname,
-          search,
+          path: pathname + search,
           headers: req.headers,
         },
         (forwarded_res) => {
           forwarded_res.pipe(res);
-        }
+        },
       );
       req.pipe(forwarded_req);
       return;
     }
 
-    /// 本级服务
-    if (req.url === "/registry") {
+    /// 网关服务
+    const { pathname, searchParams } = new URL(`http://localhost${req.url}`);
+    if (pathname === "/registry") {
       return await registry(gateway, req, res);
+    }
+    if (pathname === "/query") {
+      return await query(searchParams, req, res);
     }
     res.statusCode = 404;
     return res.end("Not Found");
@@ -58,7 +62,7 @@ const startGateway = (host: string, port: number) => {
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
     console.info(
-      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`
+      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`,
     );
   });
   return job.promise;

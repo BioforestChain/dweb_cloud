@@ -1,10 +1,11 @@
-import crypto from "node:crypto";
 import { Buffer } from "node:buffer";
-import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
 import z from "zod";
-import { z_buffer, z_url } from "./helper/z-custom.mts";
+import type { DnsRecord } from "./api/dns-table.mts";
 import type { RegistryInfo } from "./api/registry.mts";
-import { toSafeBuffer } from "./helper/safe-buffer-code.mts";
+import { signRequest, verifyRequest } from "./helper/auth-request.mts";
+import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
+import { safeBufferFrom, toSafeBuffer } from "./helper/safe-buffer-code.mts";
+import { z_buffer, z_url } from "./helper/z-custom.mts";
 export const $RegistryArgs = z.object({
   gateway: z_url,
   keypair: z.union([
@@ -19,6 +20,11 @@ export const $RegistryArgs = z.object({
   }),
 });
 export type RegistryArgs = typeof $RegistryArgs._type;
+/**
+ * 注册接口
+ * @param args
+ * @returns
+ */
 export const registry = async (args: RegistryArgs) => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
@@ -30,7 +36,7 @@ export const registry = async (args: RegistryArgs) => {
   const { hostname: gateway_hostname } = gateway_url;
 
   const address = await bfmetaSignUtil.getAddressFromPublicKey(
-    keypair.publicKey
+    keypair.publicKey,
   );
   const my_hostname = (
     gateway_hostname.endsWith(".local")
@@ -52,68 +58,31 @@ export const registry = async (args: RegistryArgs) => {
   const api_url = gateway_url;
   api_url.pathname = "/registry";
   const method = "POST";
-  const headers = await signRequestWithBody(
+  const headers = await signRequest(
     keypair,
     my_hostname,
     api_url,
     method,
-    body
+    body,
   );
+  const request = () =>
+    fetch(api_url, {
+      method: method,
+      headers: headers,
+      body: body,
+    });
   return {
     url: api_url,
     method,
     headers,
     body,
     info,
+    request,
   };
 };
 
-export const signRequestWithBody = async (
-  keypair: Keypair,
-  origin_hostname: string,
-  api_url: URL,
-  method: string,
-  body: Buffer
-) => {
-  const headers: Record<string, string> = {};
-  const { hostname: to_hostname, pathname, search } = api_url;
-  headers["x-dweb-cloud-host"] = to_hostname;
-  headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${origin_hostname}`;
-  const signMsg = Buffer.concat([
-    Buffer.from(
-      [
-        /// METHOD + URL
-        method.toUpperCase() + " " + pathname + search,
-        /// HEAD
-        `ALGORITHM bioforestchain`,
-        `FROM ${origin_hostname}`,
-        `TO ${to_hostname}`,
-      ].join("\n") + "\n"
-    ),
-    body,
-  ]);
-
-  const signature = await bfmetaSignUtil.detachedSign(
-    signMsg,
-    keypair.privateKey
-  );
-  headers["x-dweb-cloud-algorithm"] = "bioforestchain";
-  headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
-  headers["x-dweb-cloud-signature"] = toSafeBuffer(signature as Buffer);
-
-  console.debug("signMsg", signMsg.toString());
-  console.debug("signature", signature.toString("hex"));
-  console.debug("publicKey", keypair.publicKey.toString("hex"));
-  return headers;
-};
-
-export type Keypair = {
-  privateKey: Buffer;
-  publicKey: Buffer;
-};
-
 export const createBioforestChainKeypairBySecretKeyString = async (
-  secret: string
+  secret: string,
 ) => {
   bfmetaSignUtil.createKeypairBySecretKeyString;
   const keypair = await bfmetaSignUtil.createKeypair(secret);
@@ -122,8 +91,66 @@ export const createBioforestChainKeypairBySecretKeyString = async (
     publicKey: keypair.publicKey as Buffer,
     get address() {
       return bfmetaSignUtil.getAddressFromPublicKey(
-        keypair.publicKey as Buffer
+        keypair.publicKey as Buffer,
       );
     },
+  };
+};
+
+/** 查询接口 */
+export const query = (
+  req_url: string,
+  req_method: string,
+  req_headers: Headers,
+  self_hostname: string,
+  gateway_url: URL,
+) => {
+  /// 首先，算法协议是否支持
+  if (req_headers.get("x-dweb-cloud-algorithm") !== "bioforestchain") {
+    return;
+  }
+  const { verify, ...info } = verifyRequest(req_url, req_method, req_headers);
+  /// 然后检查发送目标是不是自己
+  if (info.to_hostname !== self_hostname) {
+    return;
+  }
+  /// 接着检查发送着的信息
+  const from_origin = req_headers.get("x-dweb-cloud-origin");
+  if (from_origin == null) {
+    return;
+  }
+  const { hostname: from_hostname } = new URL(from_origin);
+  const api_url = new URL(gateway_url);
+  api_url.pathname = "/query";
+  api_url.searchParams.set("hostname", from_hostname);
+  const method = "GET";
+
+  const getDnsRecord = async (
+    res: Response | Promise<Response> = fetch(api_url, { method }),
+  ) => {
+    res = await res;
+    if (false === res.ok) {
+      throw new Error(`[${res.status}] ${res.statusText}`);
+    }
+    const dnsRecord: DnsRecord = JSON.parse(await res.text(), (k, v) => {
+      if (k === "publicKey") {
+        return safeBufferFrom(v);
+      }
+      return v;
+    });
+    if (false === dnsRecord.publicKey.equals(dnsRecord.publicKey)) {
+      throw new Error("public key no match");
+    }
+    if (false === (await verify())) {
+      throw new Error("fail to veriy");
+    }
+    return dnsRecord;
+  };
+  return {
+    api_url,
+    method,
+    info,
+    verify,
+    getDnsRecord,
   };
 };

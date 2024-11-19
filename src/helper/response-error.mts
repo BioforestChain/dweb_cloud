@@ -1,4 +1,4 @@
-import http from "node:http";
+import type http from "node:http";
 export class ResponseError extends Error {
   constructor(readonly code: number, message: string, options?: ErrorOptions) {
     super(message, options);

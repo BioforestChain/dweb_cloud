@@ -4,7 +4,7 @@ import http from "node:http";
 import process from "node:process";
 import z from "zod";
 import { registry } from "../src/client.mts";
-import { setupVerbose } from "src/helper/logger.mts";
+import { setupVerbose } from "../src/helper/logger.mts";
 import { AddressInfo } from "node:net";
 
 export const main = async () => {
@@ -40,11 +40,12 @@ export const main = async () => {
     },
   });
   console.debug(packet.url.href, packet.headers, packet.info);
-  const hostname = await fetch(packet.url, {
-    method: packet.method,
-    headers: packet.headers,
-    body: packet.body,
-  }).then((r) => r.text());
+  const hostname = await packet.request().then((r) => {
+    if (r.ok) {
+      return r.text();
+    }
+    throw new Error(`[${r.status}] ${r.statusText}\n${r.text()}`);
+  });
 
   console.info("registry success", `http://${hostname}/test`);
 };
