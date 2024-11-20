@@ -2,17 +2,9 @@
   "name": "@dweb/cloud",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/multicast-dns": "^7.2.4",
-    "@types/node": "^22.9.0"
-  },
+  "author": "Gaubee",
+  "license": "MIT",
   "dependencies": {
     "@bfmeta/sign-util": "^1.1.1",
     "@gaubee/util": "^0.14.4",
@@ -20,5 +12,8 @@
     "import-meta-ponyfill": "^3.2.1",
     "multicast-dns": "^7.2.5",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/multicast-dns": "^7.2.4"
   }
 }

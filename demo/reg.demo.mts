@@ -1,8 +1,8 @@
 import { parseArgs } from "@std/cli/parse-args";
 import { import_meta_ponyfill } from "import-meta-ponyfill";
-import { setupVerbose } from "src/helper/logger.mts";
+import { setupVerbose } from "../src/helper/logger.mts";
 import process from "node:process";
-import { registry } from "src/client.mts";
+import { registry } from "../src/client.mts";
 import { z } from "zod";
 
 export const doReg = async (args: {

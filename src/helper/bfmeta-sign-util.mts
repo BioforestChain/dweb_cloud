@@ -9,10 +9,7 @@ class CryptoHelper {
     if (msg instanceof Uint8Array) {
       return crypto.createHash("sha256").update(msg).digest();
     }
-    return crypto
-      .createHash("sha256")
-      .update(new Uint8Array(Buffer.from(msg)))
-      .digest();
+    return crypto.createHash("sha256").update(Buffer.from(msg)).digest();
   }
 
   async md5(data?: Uint8Array) {
@@ -35,5 +32,5 @@ class CryptoHelper {
 export const bfmetaSignUtil = new BFMetaSignUtil(
   "",
   Buffer as any,
-  new CryptoHelper() as any
+  new CryptoHelper() as any,
 );

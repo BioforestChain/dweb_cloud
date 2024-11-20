@@ -11,10 +11,10 @@ import { registry } from "./api/registry.mts";
 import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
 import { setupVerbose } from "./helper/logger.mts";
 import { startMdnsServer } from "./mdns.mts";
-const startGateway = (
+export const startGateway = (
   host: string,
   port: number,
-  options: { cert?: string; key?: string },
+  options: { cert?: string; key?: string } = {},
 ) => {
   let origin = host;
   if (false == origin.includes("://")) {
@@ -109,5 +109,5 @@ if (import_meta_ponyfill(import.meta).main) {
   });
   const hostname = getDefaultHost({ cliArgs });
   const port = getDefaultPort({ cliArgs });
-  await startGateway(hostname, port, cliArgs);
+  void startGateway(hostname, port, cliArgs);
 }
