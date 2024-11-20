@@ -14,22 +14,22 @@ importers:
       '@gaubee/util':
         specifier: ^0.14.4
         version: 0.14.4
-      '@std/cli':
-        specifier: npm:@jsr/std__cli@^1.0.6
-        version: '@jsr/std__cli@1.0.6'
       import-meta-ponyfill:
         specifier: ^3.2.1
         version: 3.2.1
-      multicast-dns:
-        specifier: ^7.2.5
-        version: 7.2.5
       zod:
         specifier: ^3.23.8
         version: 3.23.8
     devDependencies:
+      '@std/cli':
+        specifier: npm:@jsr/std__cli@^1.0.6
+        version: '@jsr/std__cli@1.0.6'
       '@types/multicast-dns':
         specifier: ^7.2.4
         version: 7.2.4
+      multicast-dns:
+        specifier: ^7.2.5
+        version: 7.2.5
 
 packages:
 
