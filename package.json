@@ -1,5 +1,5 @@
 {
-  "name": "@dweb/cloud",
+  "name": "@dweb-browser/cloud",
   "version": "1.0.0",
   "description": "",
   "keywords": [],
@@ -8,12 +8,12 @@
   "dependencies": {
     "@bfmeta/sign-util": "^1.1.1",
     "@gaubee/util": "^0.14.4",
-    "@std/cli": "npm:@jsr/std__cli@^1.0.6",
     "import-meta-ponyfill": "^3.2.1",
-    "multicast-dns": "^7.2.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@types/multicast-dns": "^7.2.4"
+    "@std/cli": "npm:@jsr/std__cli@^1.0.6",
+    "@types/multicast-dns": "^7.2.4",
+    "multicast-dns": "^7.2.5"
   }
 }
