@@ -1,9 +1,14 @@
 import { Buffer } from "node:buffer";
 import type http from "node:http";
-export const getReqBody = async (req: http.IncomingMessage) => {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) {
-    chunks.push(chunk);
+export const getNodeReqBody = async (req: http.IncomingMessage) => {
+  if (req.method === "GET" || req.method === "HEAD") {
+    return;
   }
-  return Buffer.concat(chunks);
+  if (+(req.headers["content-length"] ?? 0) > 0) {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+  }
 };

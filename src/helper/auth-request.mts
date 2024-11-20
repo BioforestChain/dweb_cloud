@@ -1,6 +1,6 @@
 import type http from "node:http";
 import z from "zod";
-import { getReqBody } from "./income-message.mts";
+import { getNodeReqBody } from "./income-message.mts";
 import { Buffer } from "node:buffer";
 import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
 import { bfmetaSignUtil } from "./bfmeta-sign-util.mts";
@@ -11,7 +11,7 @@ export const signRequest = async (
   origin_hostname: string,
   api_url: URL,
   method: string,
-  body?: Buffer,
+  body?: Uint8Array,
 ) => {
   const headers: Record<string, string> = {};
   const { hostname: to_hostname, pathname, search } = api_url;
@@ -50,7 +50,7 @@ export const verifyRequest = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  req_body?: Buffer,
+  req_body?: Uint8Array,
 ) => {
   let safe_req_url = req_url;
   if (req_url.startsWith("http://") || req_url.startsWith("https://")) {
@@ -120,10 +120,7 @@ export const authRequestWithBody = async (
     ).end(res);
   }
   const req_method = req.method ?? "GET";
-  let rawBody: Buffer | undefined;
-  if (req_method !== "GET" && +(req.headers["content-length"] ?? 0) > 0) {
-    rawBody = await getReqBody(req);
-  }
+  const rawBody = await getNodeReqBody(req);
   const { verify, ...info } = verifyRequest(
     req.url ?? "/",
     req_method,

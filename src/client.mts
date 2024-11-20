@@ -6,6 +6,7 @@ import { signRequest, verifyRequest } from "./helper/auth-request.mts";
 import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
 import { safeBufferFrom, toSafeBuffer } from "./helper/safe-buffer-code.mts";
 import { z_buffer, z_url } from "./helper/z-custom.mts";
+export type { DnsRecord };
 export const $RegistryArgs = z.object({
   gateway: z_url,
   keypair: z.union([
@@ -28,10 +29,9 @@ export type RegistryArgs = typeof $RegistryArgs._type;
 export const registry = async (args: RegistryArgs) => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
-  const keypair =
-    typeof keypair_or_secret === "string"
-      ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
-      : keypair_or_secret;
+  const keypair = typeof keypair_or_secret === "string"
+    ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
+    : keypair_or_secret;
   const gateway_url = new URL(gateway);
   const { hostname: gateway_hostname } = gateway_url;
 
@@ -102,16 +102,22 @@ export const query = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  self_hostname: string,
+  req_body: Uint8Array | undefined,
   gateway_url: URL,
+  self_hostname?: string,
 ) => {
   /// 首先，算法协议是否支持
   if (req_headers.get("x-dweb-cloud-algorithm") !== "bioforestchain") {
     return;
   }
-  const { verify, ...info } = verifyRequest(req_url, req_method, req_headers);
+  const { verify, ...info } = verifyRequest(
+    req_url,
+    req_method,
+    req_headers,
+    req_body,
+  );
   /// 然后检查发送目标是不是自己
-  if (info.to_hostname !== self_hostname) {
+  if (self_hostname != null && info.to_hostname !== self_hostname) {
     return;
   }
   /// 接着检查发送着的信息
