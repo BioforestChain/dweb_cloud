@@ -2,8 +2,8 @@ import type http from "node:http";
 import { Buffer } from "node:buffer";
 import { dnsTable } from "./dns-table.mts";
 import { z } from "zod";
-import { toSafeBuffer } from "src/helper/safe-buffer-code.mts";
-import { responseJson } from "src/helper/response-success.mts";
+import { toSafeBuffer } from "../helper/safe-buffer-code.mts";
+import { responseJson } from "../helper/response-success.mts";
 export const query = (
   qs: URLSearchParams,
   _req: http.IncomingMessage,

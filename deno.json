@@ -1,7 +1,8 @@
 {
   "name": "@dweb/cloud",
+  "version": "0.0.1",
   "exports": {
     "./gateway": "./src/gateway.mts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.mts"
   }
 }

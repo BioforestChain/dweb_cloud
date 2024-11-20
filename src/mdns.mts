@@ -1,4 +1,4 @@
-import makeMdns, { ResponseOutgoingPacket } from "multicast-dns";
+import makeMdns, { type ResponseOutgoingPacket } from "multicast-dns";
 import os from "node:os";
 import import_meta_ponyfill from "import-meta-ponyfill";
 import { getDefaultHost } from "./args.mts";
@@ -6,7 +6,7 @@ import { dnsTable } from "./api/dns-table.mts";
 export const startMdnsServer = (hostname: string, port = 80) => {
   if (hostname.split(".").length > 2) {
     throw new Error(
-      "The '.local' domain does not support subdomains and must be in the top-level domain."
+      "The '.local' domain does not support subdomains and must be in the top-level domain.",
     );
   }
   const suffix_host = `-${hostname}`;
@@ -65,7 +65,7 @@ export const startMdnsServer = (hostname: string, port = 80) => {
               );
             })
             .map((ipv4) => {
-              return [...dnsTable.entries()].map(([hostname, record]) => {
+              return [...dnsTable.entries()].map(([hostname]) => {
                 return {
                   name: hostname,
                   type: "A",
@@ -74,7 +74,7 @@ export const startMdnsServer = (hostname: string, port = 80) => {
                 } as any;
               });
             })
-            .flat()
+            .flat(),
         );
       } else if (
         question.type === "A" &&
@@ -101,8 +101,8 @@ export const startMdnsServer = (hostname: string, port = 80) => {
                   ttl: 300,
                   flash: true,
                   data: ipv4.address,
-                } as any)
-            )
+                }) as any,
+            ),
         );
       }
     }

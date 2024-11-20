@@ -1,7 +1,7 @@
 import { parseArgs } from "@std/cli/parse-args";
 import { import_meta_ponyfill } from "import-meta-ponyfill";
 import http from "node:http";
-import { AddressInfo } from "node:net";
+import type { AddressInfo } from "node:net";
 import process from "node:process";
 import { setupVerbose } from "src/helper/logger.mts";
 import { z } from "zod";

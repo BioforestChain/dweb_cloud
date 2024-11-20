@@ -1,75 +1,28 @@
 import os from "node:os";
 import process from "node:process";
-import {
-  Aliases,
-  Args,
-  BooleanType,
-  Collectable,
-  Negatable,
-  parseArgs,
-  ParseOptions,
-  StringType,
-  Values,
-} from "@std/cli/parse-args";
-export const parseCliArgs = <
-  TArgs extends Values<
-    TBooleans,
-    TStrings,
-    TCollectable,
-    TNegatable,
-    TDefaults,
-    TAliases
-  >,
-  TDoubleDash extends boolean | undefined = undefined,
-  TBooleans extends BooleanType = undefined,
-  TStrings extends StringType = undefined,
-  TCollectable extends Collectable = undefined,
-  TNegatable extends Negatable = undefined,
-  TDefaults extends Record<string, unknown> | undefined = undefined,
-  TAliases extends Aliases<TAliasArgNames, TAliasNames> | undefined = undefined,
-  TAliasArgNames extends string = string,
-  TAliasNames extends string = string
->(
-  options: ParseOptions<
-    TBooleans,
-    TStrings,
-    TCollectable,
-    TNegatable,
-    TDefaults,
-    TAliases,
-    TDoubleDash
-  >,
-  args = process.argv.slice(2)
-) => {
-  const cliArgs = parseArgs<
-    TArgs,
-    TDoubleDash,
-    TBooleans,
-    TStrings,
-    TCollectable,
-    TNegatable,
-    TDefaults,
-    TAliases,
-    TAliasArgNames,
-    TAliasNames
-  >(args, options);
-  return cliArgs;
-};
+import { parseArgs } from "@std/cli/parse-args";
+export const getCliArgs = () => process.argv.slice(2);
 
-export const getDefaultHost = async (
-  defaultHost = os.hostname(),
-  cliArgs: {
-    host?: string;
-    h?: string;
-  } = parseCliArgs({
-    string: ["host"],
-    alias: {
-      host: "h",
-    },
-  })
+export const getDefaultHost = (
+  config: {
+    defaultHost?: string;
+    cliArgs?: {
+      host?: string;
+      h?: string;
+    };
+  } = {},
 ) => {
+  const {
+    defaultHost = os.hostname(),
+    cliArgs = parseArgs(getCliArgs(), {
+      string: ["host"],
+      alias: {
+        host: "h",
+      },
+    }),
+  } = config;
   let hostname = String(
-    cliArgs.host || cliArgs.h || process.env.DWEB_CLOUD_HOST || defaultHost
+    cliArgs.host || cliArgs.h || process.env.DWEB_CLOUD_HOST || defaultHost,
   );
   hostname = hostname.toLowerCase();
   if (false === hostname.endsWith(".local")) {
@@ -78,18 +31,24 @@ export const getDefaultHost = async (
   return hostname;
 };
 
-export const getDefaultPort = async (
-  defaultPort = 18080,
-  cliArgs: {
-    port?: string | number;
-    p?: string | number;
-  } = parseCliArgs({
-    string: ["port"],
-    alias: {
-      port: "p",
-    },
-  })
+export const getDefaultPort = (
+  config: {
+    defaultPort?: number;
+    cliArgs?: {
+      port?: string | number;
+      p?: string | number;
+    };
+  } = {},
 ) => {
+  const {
+    defaultPort = 18080,
+    cliArgs = parseArgs(getCliArgs(), {
+      string: ["port"],
+      alias: {
+        port: "p",
+      },
+    }),
+  } = config;
   let port = +(process.env.DWEB_CLOUD_PORT || defaultPort);
   port = +(cliArgs.port || cliArgs.p || port);
   if (Number.isFinite(port) === false) {

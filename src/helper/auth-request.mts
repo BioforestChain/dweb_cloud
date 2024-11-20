@@ -1,4 +1,4 @@
-import http from "node:http";
+import type http from "node:http";
 import z from "zod";
 import { getReqBody } from "./income-message.mts";
 import { Buffer } from "node:buffer";

@@ -1,19 +1,20 @@
+import { parseArgs } from "@std/cli/parse-args";
 import import_meta_ponyfill from "import-meta-ponyfill";
+import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
-import fs from "node:fs";
-import { AddressInfo } from "node:net";
-import { dnsTable } from "./api/dns-table.mts";
-import { registry } from "./api/registry.mts";
-import { getDefaultHost, getDefaultPort, parseCliArgs } from "./args.mts";
-import { startMdnsServer } from "./mdns.mts";
-import { setupVerbose } from "./helper/logger.mts";
-import { query } from "./api/query.mts";
+import type { AddressInfo } from "node:net";
 import { z } from "zod";
+import { dnsTable } from "./api/dns-table.mts";
+import { query } from "./api/query.mts";
+import { registry } from "./api/registry.mts";
+import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
+import { setupVerbose } from "./helper/logger.mts";
+import { startMdnsServer } from "./mdns.mts";
 const startGateway = (
   host: string,
   port: number,
-  options: { cert?: string; key?: string }
+  options: { cert?: string; key?: string },
 ) => {
   let origin = host;
   if (false == origin.includes("://")) {
@@ -50,7 +51,7 @@ const startGateway = (
         },
         (forwarded_res) => {
           forwarded_res.pipe(res);
-        }
+        },
       );
       req.pipe(forwarded_req);
       return;
@@ -81,7 +82,7 @@ const startGateway = (
         cert: fs.readFileSync(cert_filename),
         key: fs.readFileSync(key_filename),
       },
-      onRequest
+      onRequest,
     );
   } else {
     server = http.createServer(onRequest);
@@ -91,7 +92,7 @@ const startGateway = (
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
     console.info(
-      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`
+      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`,
     );
   });
   return job.promise;
@@ -99,14 +100,14 @@ const startGateway = (
 
 if (import_meta_ponyfill(import.meta).main) {
   setupVerbose();
-  const cliArgs = parseCliArgs({
+  const cliArgs = parseArgs(getCliArgs(), {
     string: ["host", "port", "cert", "key"],
     alias: {
       host: "h",
       port: "p",
     },
   });
-  const hostname = await getDefaultHost(undefined, cliArgs);
-  const port = await getDefaultPort(undefined, cliArgs);
+  const hostname = getDefaultHost({ cliArgs });
+  const port = getDefaultPort({ cliArgs });
   await startGateway(hostname, port, cliArgs);
 }

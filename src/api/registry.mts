@@ -2,11 +2,11 @@ import type http from "node:http";
 import z from "zod";
 import { dnsTable } from "./dns-table.mts";
 
-import { responseText } from "src/helper/response-success.mts";
+import { responseText } from "../helper/response-success.mts";
 import { authRequestWithBody } from "../helper/auth-request.mts";
 import { ResponseError } from "../helper/response-error.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
-import { z_buffer } from "src/helper/z-custom.mts";
+import { z_buffer } from "../helper/z-custom.mts";
 
 export const $RegistryInfo = z.object({
   auth: z.union([
