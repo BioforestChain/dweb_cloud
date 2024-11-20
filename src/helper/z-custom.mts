@@ -1,10 +1,13 @@
 import z from "zod";
 import { Buffer } from "node:buffer";
-export const z_buffer = z.custom<Buffer>((data) =>
-  Buffer.isBuffer(data),
-);
-export type ZodUrl = `http://${string}` | `https://${string}` | (string & {});
-export const z_url = z.custom<ZodUrl>((data) => {
+export type ZodBuffer = z.ZodType<Buffer>;
+export const z_buffer: ZodBuffer = z.custom((data) => Buffer.isBuffer(data));
+export type SafeUrlString =
+  | `http://${string}`
+  | `https://${string}`
+  | (string & {});
+export type ZodUrl = z.ZodType<SafeUrlString>;
+export const z_url: ZodUrl = z.custom((data) => {
   if (typeof data !== "string") {
     return false;
   }

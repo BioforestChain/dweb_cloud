@@ -7,8 +7,30 @@ import { authRequestWithBody } from "../helper/auth-request.mts";
 import { ResponseError } from "../helper/response-error.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
-
-export const $RegistryInfo = z.object({
+export const $RegistryInfo: z.ZodObject<{
+  auth: z.ZodUnion<[
+    z.ZodObject<{
+      algorithm: z.ZodEnum<["bioforestchain"]>;
+      publicKey: z.ZodString;
+    }>,
+    z.ZodObject<{
+      algorithm: z.ZodEnum<["web3"]>;
+      publicKey: z.ZodString;
+    }>,
+  ]>;
+  service: z.ZodUnion<[
+    z.ZodObject<{
+      mode: z.ZodEnum<["http"]>;
+      hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+      port: z.ZodNumber;
+    }>,
+    z.ZodObject<{
+      mode: z.ZodEnum<["vm"]>;
+      type: z.ZodEnum<["script", "module"]>;
+      href: z.ZodString;
+    }>,
+  ]>;
+}> = z.object({
   auth: z.union([
     z.object({
       algorithm: z.enum(["bioforestchain"]),

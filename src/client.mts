@@ -6,8 +6,25 @@ import { signRequest, verifyRequest } from "./helper/auth-request.mts";
 import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
 import { safeBufferFrom, toSafeBuffer } from "./helper/safe-buffer-code.mts";
 import { z_buffer, z_url } from "./helper/z-custom.mts";
+import type { ZodBuffer, ZodUrl } from "./helper/mod.mts";
 export type { DnsRecord };
-export const $RegistryArgs = z.object({
+export const $RegistryArgs: z.ZodObject<{
+  gateway: ZodUrl;
+  keypair: z.ZodUnion<
+    [
+      z.ZodString,
+      z.ZodObject<
+        { privateKey: ZodBuffer; publicKey: ZodBuffer }
+      >,
+    ]
+  >;
+  algorithm: z.ZodEnum<["bioforestchain"]>;
+  service: z.ZodObject<{
+    mode: z.ZodEnum<["http"]>;
+    hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    port: z.ZodNumber;
+  }>;
+}> = z.object({
   gateway: z_url,
   keypair: z.union([
     z.string(),
@@ -26,7 +43,14 @@ export type RegistryArgs = typeof $RegistryArgs._type;
  * @param args
  * @returns
  */
-export const registry = async (args: RegistryArgs) => {
+export const registry = async (args: RegistryArgs): Promise<{
+  url: URL;
+  method: string;
+  headers: Record<string, string>;
+  body: Buffer;
+  info: RegistryInfo;
+  request: () => Promise<Response>;
+}> => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
   const keypair = typeof keypair_or_secret === "string"
@@ -83,7 +107,11 @@ export const registry = async (args: RegistryArgs) => {
 
 export const createBioforestChainKeypairBySecretKeyString = async (
   secret: string,
-) => {
+): Promise<{
+  privateKey: Buffer;
+  publicKey: Buffer;
+  readonly address: Promise<string>;
+}> => {
   bfmetaSignUtil.createKeypairBySecretKeyString;
   const keypair = await bfmetaSignUtil.createKeypair(secret);
   return {
@@ -105,7 +133,13 @@ export const query = (
   req_body: Uint8Array | undefined,
   gateway_url: URL,
   self_hostname?: string,
-) => {
+): {
+  api_url: URL;
+  method: string;
+  info: Omit<ReturnType<typeof verifyRequest>, "verify">;
+  verify: () => Promise<boolean>;
+  getDnsRecord: (res?: Response | Promise<Response>) => Promise<DnsRecord>;
+} | undefined => {
   /// 首先，算法协议是否支持
   if (req_headers.get("x-dweb-cloud-algorithm") !== "bioforestchain") {
     return;

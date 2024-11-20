@@ -1,6 +1,8 @@
 import { Buffer } from "node:buffer";
 import type http from "node:http";
-export const getNodeReqBody = async (req: http.IncomingMessage) => {
+export const getNodeReqBody = async (
+  req: http.IncomingMessage,
+): Promise<Buffer | undefined> => {
   if (req.method === "GET" || req.method === "HEAD") {
     return;
   }

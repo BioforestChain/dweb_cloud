@@ -1,7 +1,13 @@
 import z from "zod";
-import { z_buffer } from "../helper/z-custom.mts";
+import { z_buffer, type ZodBuffer } from "../helper/z-custom.mts";
 
-export const $DnsRecord = z.object({
+export const $DnsRecord: z.ZodObject<{
+  mode: z.ZodEnum<["http"]>;
+  hostname: z.ZodString;
+  port: z.ZodNumber;
+  publicKey: ZodBuffer;
+  address: z.ZodString;
+}> = z.object({
   mode: z.enum(["http"]),
   hostname: z.string(),
   port: z.number(),

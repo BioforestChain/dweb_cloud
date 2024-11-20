@@ -15,7 +15,7 @@ export const startGateway = (
   host: string,
   port: number,
   options: { cert?: string; key?: string } = {},
-) => {
+): Promise<AddressInfo> => {
   let origin = host;
   if (false == origin.includes("://")) {
     origin = "http://" + host;

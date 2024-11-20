@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-export const safeBufferFrom = (data: string) => {
+export const safeBufferFrom = (data: string): Buffer => {
   if (data.startsWith("hex:")) {
     return Buffer.from(data.slice(4), "hex");
   }
@@ -12,7 +12,10 @@ export const safeBufferFrom = (data: string) => {
   }
   return Buffer.from(data);
 };
-export const toSafeBuffer = (buffer: Buffer, encoding?: "base64" | "hex") => {
+export const toSafeBuffer = (
+  buffer: Buffer,
+  encoding?: "base64" | "hex",
+): string => {
   if (encoding == null) {
     if (buffer.length <= 32) {
       encoding = "hex";

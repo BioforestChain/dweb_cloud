@@ -12,7 +12,7 @@ export const signRequest = async (
   api_url: URL,
   method: string,
   body?: Uint8Array,
-) => {
+): Promise<Record<string, string>> => {
   const headers: Record<string, string> = {};
   const { hostname: to_hostname, pathname, search } = api_url;
   headers["x-dweb-cloud-host"] = to_hostname;
@@ -51,7 +51,12 @@ export const verifyRequest = (
   req_method: string,
   req_headers: Headers,
   req_body?: Uint8Array,
-) => {
+): {
+  verify: () => Promise<boolean>;
+  publicKey: Buffer;
+  from_hostname: string;
+  to_hostname: string;
+} => {
   let safe_req_url = req_url;
   if (req_url.startsWith("http://") || req_url.startsWith("https://")) {
     const { pathname, search } = new URL(req_url);
@@ -109,7 +114,13 @@ export type Keypair = {
 export const authRequestWithBody = async (
   req: http.IncomingMessage,
   res: http.ServerResponse,
-) => {
+): Promise<{
+  address: string;
+  rawBody: Buffer | undefined;
+  publicKey: Buffer;
+  from_hostname: string;
+  to_hostname: string;
+}> => {
   const algorithm = z
     .string({ required_error: "require algorithm" })
     .parse(req.headers["x-dweb-cloud-algorithm"]);
