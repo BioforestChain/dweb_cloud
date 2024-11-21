@@ -50,7 +50,7 @@ export const verifyRequest = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  req_body?: Uint8Array,
+  req_body?: Uint8Array | (() => Promise<Uint8Array>),
 ): {
   verify: () => Promise<boolean>;
   publicKey: Buffer;
@@ -83,7 +83,7 @@ export const verifyRequest = (
       .string({ required_error: "no found header x-dweb-cloud-signature" })
       .parse(req_headers.get("x-dweb-cloud-signature")),
   );
-  const verify = () => {
+  const verify = async () => {
     const header = Buffer.from(
       [
         /// METHOD + URL
@@ -95,6 +95,9 @@ export const verifyRequest = (
         `NOISE ${noise}`,
       ].join("\n") + "\n",
     );
+    if (typeof req_body === "function") {
+      req_body = await req_body();
+    }
     const signMsg = req_body ? Buffer.concat([header, req_body]) : header;
     return bfmetaSignUtil.detachedVeriy(signMsg, signature, publicKey);
   };

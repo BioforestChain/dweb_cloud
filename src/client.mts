@@ -11,12 +11,7 @@ export type { DnsRecord };
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
   keypair: z.ZodUnion<
-    [
-      z.ZodString,
-      z.ZodObject<
-        { privateKey: ZodBuffer; publicKey: ZodBuffer }
-      >,
-    ]
+    [z.ZodString, z.ZodObject<{ privateKey: ZodBuffer; publicKey: ZodBuffer }>]
   >;
   algorithm: z.ZodEnum<["bioforestchain"]>;
   service: z.ZodObject<{
@@ -43,7 +38,9 @@ export type RegistryArgs = typeof $RegistryArgs._type;
  * @param args
  * @returns
  */
-export const registry = async (args: RegistryArgs): Promise<{
+export const registry = async (
+  args: RegistryArgs,
+): Promise<{
   url: URL;
   method: string;
   headers: Record<string, string>;
@@ -53,9 +50,10 @@ export const registry = async (args: RegistryArgs): Promise<{
 }> => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
-  const keypair = typeof keypair_or_secret === "string"
-    ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
-    : keypair_or_secret;
+  const keypair =
+    typeof keypair_or_secret === "string"
+      ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
+      : keypair_or_secret;
   const gateway_url = new URL(gateway);
   const { hostname: gateway_hostname } = gateway_url;
 
@@ -130,16 +128,18 @@ export const query = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  req_body: Uint8Array | undefined,
+  req_body: Uint8Array | (() => Promise<Uint8Array>) | undefined,
   gateway_url: URL,
   self_hostname?: string,
-): {
-  api_url: URL;
-  method: string;
-  info: Omit<ReturnType<typeof verifyRequest>, "verify">;
-  verify: () => Promise<boolean>;
-  getDnsRecord: (res?: Response | Promise<Response>) => Promise<DnsRecord>;
-} | undefined => {
+):
+  | {
+      api_url: URL;
+      method: string;
+      info: Omit<ReturnType<typeof verifyRequest>, "verify">;
+      verify: () => Promise<boolean>;
+      getDnsRecord: (res?: Response | Promise<Response>) => Promise<DnsRecord>;
+    }
+  | undefined => {
   /// 首先，算法协议是否支持
   if (req_headers.get("x-dweb-cloud-algorithm") !== "bioforestchain") {
     return;
