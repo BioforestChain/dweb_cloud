@@ -39,7 +39,7 @@ export type RegistryArgs = typeof $RegistryArgs._type;
  * @returns
  */
 export const registry = async (
-  args: RegistryArgs,
+  args: RegistryArgs
 ): Promise<{
   url: URL;
   method: string;
@@ -58,7 +58,7 @@ export const registry = async (
   const { hostname: gateway_hostname } = gateway_url;
 
   const address = await bfmetaSignUtil.getAddressFromPublicKey(
-    keypair.publicKey,
+    keypair.publicKey
   );
   const my_hostname = (
     gateway_hostname.endsWith(".local")
@@ -85,7 +85,7 @@ export const registry = async (
     my_hostname,
     api_url,
     method,
-    body,
+    body
   );
   const request = () =>
     fetch(api_url, {
@@ -104,7 +104,7 @@ export const registry = async (
 };
 
 export const createBioforestChainKeypairBySecretKeyString = async (
-  secret: string,
+  secret: string
 ): Promise<{
   privateKey: Buffer;
   publicKey: Buffer;
@@ -117,7 +117,7 @@ export const createBioforestChainKeypairBySecretKeyString = async (
     publicKey: keypair.publicKey as Buffer,
     get address() {
       return bfmetaSignUtil.getAddressFromPublicKey(
-        keypair.publicKey as Buffer,
+        keypair.publicKey as Buffer
       );
     },
   };
@@ -128,9 +128,9 @@ export const query = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  req_body: Uint8Array | (() => Promise<Uint8Array>) | undefined,
+  req_body: Uint8Array | undefined | (() => Promise<Uint8Array | undefined>),
   gateway_url: URL,
-  self_hostname?: string,
+  self_hostname?: string
 ):
   | {
       api_url: URL;
@@ -148,7 +148,7 @@ export const query = (
     req_url,
     req_method,
     req_headers,
-    req_body,
+    req_body
   );
   /// 然后检查发送目标是不是自己
   if (self_hostname != null && info.to_hostname !== self_hostname) {
@@ -166,7 +166,7 @@ export const query = (
   const method = "GET";
 
   const getDnsRecord = async (
-    res: Response | Promise<Response> = fetch(api_url, { method }),
+    res: Response | Promise<Response> = fetch(api_url, { method })
   ) => {
     res = await res;
     if (false === res.ok) {
