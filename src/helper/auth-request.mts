@@ -50,7 +50,7 @@ export const verifyRequest = (
   req_url: string,
   req_method: string,
   req_headers: Headers,
-  req_body?: Uint8Array | (() => Promise<Uint8Array>),
+  req_body?: Uint8Array | (() => Promise<Uint8Array | undefined>),
 ): {
   verify: () => Promise<boolean>;
   publicKey: Buffer;
