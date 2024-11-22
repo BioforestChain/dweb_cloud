@@ -18,6 +18,7 @@ export const startMdnsServer = (hostname: string, port = 80) => {
   mdns.on("query", function (query, rinfo) {
     console.debug("got a query packet=", query.questions, "rinfo=", rinfo);
     let r: ResponseOutgoingPacket = { answers: [] };
+    type Answer = ResponseOutgoingPacket['answers'][number]
     for (const question of query.questions) {
       if (question.type === "PTR" && question.name === "_http._tcp.local") {
         r = {
@@ -71,7 +72,7 @@ export const startMdnsServer = (hostname: string, port = 80) => {
                   type: "A",
                   ttl: 30,
                   data: ipv4.address,
-                } as any;
+                } as Answer;
               });
             })
             .flat(),

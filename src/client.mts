@@ -194,3 +194,28 @@ export const query = (
     getDnsRecord,
   };
 };
+
+export const queryDnsRecord: (
+  gateway_origin: string | URL,
+  search: { hostname: string } | { address: string }
+) => Promise<DnsRecord> = async (
+  gateway_origin: string | URL,
+  search: { hostname: string } | { address: string }
+) => {
+  const gateway_url = new URL(gateway_origin);
+  gateway_url.pathname = "/query";
+  for (const key in search) {
+    gateway_url.searchParams.set(key, search[key as keyof typeof search]);
+  }
+  const res = await fetch(gateway_url);
+  if (res.ok === false) {
+    throw new Error(`[${res.status}] ${res.statusText}`);
+  }
+  const dnsRecord: DnsRecord = JSON.parse(await res.text(), (k, v) => {
+    if (k === "publicKey") {
+      return safeBufferFrom(v);
+    }
+    return v;
+  });
+  return dnsRecord;
+};

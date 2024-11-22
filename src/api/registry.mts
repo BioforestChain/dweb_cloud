@@ -1,6 +1,7 @@
 import type http from "node:http";
+import dns from "node:dns";
 import z from "zod";
-import { dnsTable } from "./dns-table.mts";
+import { dnsAddressTable, dnsTable, DnsRecord } from "./dns-table.mts";
 
 import { responseText } from "../helper/response-success.mts";
 import { authRequestWithBody } from "../helper/auth-request.mts";
@@ -8,28 +9,32 @@ import { ResponseError } from "../helper/response-error.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
 export const $RegistryInfo: z.ZodObject<{
-  auth: z.ZodUnion<[
-    z.ZodObject<{
-      algorithm: z.ZodEnum<["bioforestchain"]>;
-      publicKey: z.ZodString;
-    }>,
-    z.ZodObject<{
-      algorithm: z.ZodEnum<["web3"]>;
-      publicKey: z.ZodString;
-    }>,
-  ]>;
-  service: z.ZodUnion<[
-    z.ZodObject<{
-      mode: z.ZodEnum<["http"]>;
-      hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
-      port: z.ZodNumber;
-    }>,
-    z.ZodObject<{
-      mode: z.ZodEnum<["vm"]>;
-      type: z.ZodEnum<["script", "module"]>;
-      href: z.ZodString;
-    }>,
-  ]>;
+  auth: z.ZodUnion<
+    [
+      z.ZodObject<{
+        algorithm: z.ZodEnum<["bioforestchain"]>;
+        publicKey: z.ZodString;
+      }>,
+      z.ZodObject<{
+        algorithm: z.ZodEnum<["web3"]>;
+        publicKey: z.ZodString;
+      }>
+    ]
+  >;
+  service: z.ZodUnion<
+    [
+      z.ZodObject<{
+        mode: z.ZodEnum<["http"]>;
+        hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+        port: z.ZodNumber;
+      }>,
+      z.ZodObject<{
+        mode: z.ZodEnum<["vm"]>;
+        type: z.ZodEnum<["script", "module"]>;
+        href: z.ZodString;
+      }>
+    ]
+  >;
 }> = z.object({
   auth: z.union([
     z.object({
@@ -63,30 +68,30 @@ export type RegistryInfo = typeof $RegistryInfo._type;
 export const registry = async (
   gateway: { protocol: string; hostname: string; port: number },
   req: http.IncomingMessage,
-  res: http.ServerResponse,
+  res: http.ServerResponse
 ) => {
   const { rawBody, from_hostname, publicKey, address } =
     await authRequestWithBody(req, res);
 
   const registryInfo = $RegistryInfo.parse(
-    JSON.parse(z_buffer.parse(rawBody).toString("utf-8")),
+    JSON.parse(z_buffer.parse(rawBody).toString("utf-8"))
   );
   if (registryInfo.auth.algorithm !== "bioforestchain") {
     throw new ResponseError(
       500,
-      `No support '${registryInfo.auth.algorithm}' auth yet.`,
+      `No support '${registryInfo.auth.algorithm}' auth yet.`
     ).end(res);
   }
   if (registryInfo.service.mode !== "http") {
     throw new ResponseError(
       500,
-      `No support '${registryInfo.service.mode}' service yet.`,
+      `No support '${registryInfo.service.mode}' service yet.`
     ).end(res);
   }
   /// 公钥要一致
   if (false === publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey))) {
     throw new ResponseError(403, `fail to registry, publicKey no match.`).end(
-      res,
+      res
     );
   }
   // /// 发起域名要和注册的域名一致
@@ -105,15 +110,27 @@ export const registry = async (
   if (false === from_hostname.endsWith(hostname_suffix)) {
     throw new ResponseError(
       403,
-      "fail to registry, hostname no belongs to gateway.",
+      "fail to registry, hostname no belongs to gateway."
     ).end(res);
   }
 
-  dnsTable.set(from_hostname, {
+  /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
+  const lookupHostname = registryInfo.service.hostname ?? from_hostname;
+  const lookupResult = await dns.promises.lookup(lookupHostname);
+  const dnsRecord: DnsRecord = {
     ...registryInfo.service,
-    hostname: registryInfo.service.hostname ?? "127.0.0.1",
+    hostname: from_hostname,
+    lookupHostname,
+    address: lookupResult.address,
+    family: lookupResult.family as 4 | 6,
     publicKey,
-    address,
+    peerAddress: address,
+  };
+  dnsTable.set(from_hostname, dnsRecord);
+
+  dnsAddressTable.set(address, {
+    mode: "address",
+    hostname: from_hostname,
   });
 
   const registry_host = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
