@@ -23,10 +23,10 @@ export const doReg = async (args: {
     },
   });
   console.debug(packet.url.href, packet.headers, packet.info);
-  const origin = await packet.request().then((r) => r.text());
+  const dnsRecord = await packet.request();
 
-  console.info("registry success", `${origin}/test`);
-  return origin;
+  console.info("registry success", `${dnsRecord.origin}/test`);
+  return dnsRecord;
 };
 
 if (import_meta_ponyfill(import.meta).main) {

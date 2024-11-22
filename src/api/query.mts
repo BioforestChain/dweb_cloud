@@ -1,9 +1,8 @@
 import type http from "node:http";
-import { Buffer } from "node:buffer";
-import { dnsAddressTable, dnsTable } from "./dns-table.mts";
 import { z } from "zod";
-import { toSafeBuffer } from "../helper/safe-buffer-code.mts";
 import { responseJson } from "../helper/response-success.mts";
+import { dnsAddressTable, dnsTable } from "./dns-table.mts";
+import { dnsRecordReplacer } from "../helper/dns-record.mts";
 export const query = (
   qs: URLSearchParams,
   _req: http.IncomingMessage,
@@ -20,10 +19,5 @@ export const query = (
 
   const info = dnsTable.get(hostname);
 
-  responseJson(res, info, (_, v) => {
-    if (Buffer.isBuffer(v)) {
-      return toSafeBuffer(v, "hex");
-    }
-    return v;
-  });
+  responseJson(res, info, dnsRecordReplacer);
 };

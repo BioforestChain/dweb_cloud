@@ -1,3 +1,4 @@
+export * from "./dns-record.mts";
 export * from "./income-message.mts";
 export * from "./logger.mts";
 export * from "./z-custom.mts";

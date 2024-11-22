@@ -1,12 +1,13 @@
 import { Buffer } from "node:buffer";
 import z from "zod";
-import type { DnsRecord } from "./api/dns-table.mts";
+import { dnsRecordReviver, type DnsRecord } from "./helper/dns-record.mts";
 import type { RegistryInfo } from "./api/registry.mts";
 import { signRequest, verifyRequest } from "./helper/auth-request.mts";
 import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
-import { safeBufferFrom, toSafeBuffer } from "./helper/safe-buffer-code.mts";
-import { z_buffer, z_url } from "./helper/z-custom.mts";
 import type { ZodBuffer, ZodUrl } from "./helper/mod.mts";
+import { toSafeBuffer } from "./helper/safe-buffer-code.mts";
+import { z_buffer, z_url } from "./helper/z-custom.mts";
+import { stat } from "node:fs";
 export type { DnsRecord };
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
@@ -46,7 +47,7 @@ export const registry = async (
   headers: Record<string, string>;
   body: Buffer;
   info: RegistryInfo;
-  request: () => Promise<Response>;
+  request: () => Promise<DnsRecord>;
 }> => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
@@ -87,12 +88,17 @@ export const registry = async (
     method,
     body
   );
-  const request = () =>
-    fetch(api_url, {
+  const request = async () => {
+    const res = await fetch(api_url, {
       method: method,
       headers: headers,
       body: body,
     });
+    if (!res.ok) {
+      throw new Error(`[${res.status}] ${res.statusText}`);
+    }
+    return JSON.parse(await res.text(), dnsRecordReviver) as DnsRecord;
+  };
   return {
     url: api_url,
     method,
@@ -172,12 +178,7 @@ export const query = (
     if (false === res.ok) {
       throw new Error(`[${res.status}] ${res.statusText}`);
     }
-    const dnsRecord: DnsRecord = JSON.parse(await res.text(), (k, v) => {
-      if (k === "publicKey") {
-        return safeBufferFrom(v);
-      }
-      return v;
-    });
+    const dnsRecord: DnsRecord = JSON.parse(await res.text(), dnsRecordReviver);
     if (false === dnsRecord.publicKey.equals(dnsRecord.publicKey)) {
       throw new Error("public key no match");
     }
@@ -211,11 +212,6 @@ export const queryDnsRecord: (
   if (res.ok === false) {
     throw new Error(`[${res.status}] ${res.statusText}`);
   }
-  const dnsRecord: DnsRecord = JSON.parse(await res.text(), (k, v) => {
-    if (k === "publicKey") {
-      return safeBufferFrom(v);
-    }
-    return v;
-  });
+  const dnsRecord: DnsRecord = JSON.parse(await res.text(), dnsRecordReviver);
   return dnsRecord;
 };

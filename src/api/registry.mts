@@ -1,13 +1,14 @@
-import type http from "node:http";
 import dns from "node:dns";
+import type http from "node:http";
 import z from "zod";
-import { dnsAddressTable, dnsTable, DnsRecord } from "./dns-table.mts";
+import { dnsAddressTable, dnsTable } from "./dns-table.mts";
 
-import { responseText } from "../helper/response-success.mts";
 import { authRequestWithBody } from "../helper/auth-request.mts";
 import { ResponseError } from "../helper/response-error.mts";
+import { responseJson } from "../helper/response-success.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
+import { dnsRecordReplacer, type DnsRecord } from "../helper/dns-record.mts";
 export const $RegistryInfo: z.ZodObject<{
   auth: z.ZodUnion<
     [
@@ -117,8 +118,10 @@ export const registry = async (
   /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
   const lookupHostname = registryInfo.service.hostname ?? from_hostname;
   const lookupResult = await dns.promises.lookup(lookupHostname);
+  const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {
     ...registryInfo.service,
+    origin: registry_origin,
     hostname: from_hostname,
     lookupHostname,
     address: lookupResult.address,
@@ -133,7 +136,5 @@ export const registry = async (
     hostname: from_hostname,
   });
 
-  const registry_host = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
-  console.log("registry host:", registry_host);
-  return responseText(res, registry_host);
+  return responseJson(res, dnsRecord, dnsRecordReplacer);
 };
