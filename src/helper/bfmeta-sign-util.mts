@@ -29,8 +29,8 @@ class CryptoHelper {
   }
 }
 
-export const bfmetaSignUtil = new BFMetaSignUtil(
+export const bfmetaSignUtil: BFMetaSignUtil = new BFMetaSignUtil(
   "",
   Buffer as any,
-  new CryptoHelper() as any,
+  new CryptoHelper() as any
 );

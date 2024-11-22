@@ -129,6 +129,12 @@ export const createBioforestChainKeypairBySecretKeyString = async (
   };
 };
 
+export const createBioforestChainAddressByPublicKey = (
+  publicKey: Buffer
+): Promise<string> => {
+  return bfmetaSignUtil.getAddressFromPublicKey(publicKey as Buffer);
+};
+
 /** 查询接口 */
 export const query = (
   req_url: string,
