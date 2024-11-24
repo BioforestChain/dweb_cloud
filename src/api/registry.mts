@@ -8,7 +8,7 @@ import { ResponseError } from "../helper/response-error.mts";
 import { responseJson } from "../helper/response-success.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
-import { dnsRecordReplacer, type DnsRecord } from "../helper/dns-record.mts";
+import { dnsRecordStringify, type DnsRecord } from "../helper/dns-record.mts";
 export const $RegistryInfo: z.ZodObject<{
   auth: z.ZodUnion<
     [
@@ -136,5 +136,5 @@ export const registry = async (
     hostname: from_hostname,
   });
 
-  return responseJson(res, dnsRecord, dnsRecordReplacer);
+  return responseJson(res, dnsRecord, dnsRecordStringify);
 };

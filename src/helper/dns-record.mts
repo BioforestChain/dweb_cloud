@@ -35,21 +35,24 @@ export const $DnsAddressRecord: z.ZodObject<{
 });
 export type DnsAddressRecord = typeof $DnsAddressRecord._type; //
 
-export const dnsRecordReplacer: (key: string, value: unknown) => unknown = (
-  _key,
-  value
-) => {
-  if (Buffer.isBuffer(value)) {
-    return toSafeBuffer(value, "hex");
-  }
-  return value;
+export const dnsRecordStringify: (data: DnsRecord) => string = (data) => {
+  Reflect.set(data.publicKey, "toJSON", function (this: Buffer) {
+    return this;
+  });
+  const json = JSON.stringify(data, (key, value) => {
+    if (key === "publicKey") {
+      return toSafeBuffer(value as Buffer, "hex");
+    }
+    return value;
+  });
+  Reflect.deleteProperty(data.publicKey, "toJSON");
+  return json;
 };
-export const dnsRecordReviver: (key: string, value: unknown) => unknown = (
-  key,
-  value
-) => {
-  if (key === "publicKey") {
-    return safeBufferFrom(value as string);
-  }
-  return value;
+export const dnsRecordParser: (data: string) => DnsRecord = (data) => {
+  return JSON.parse(data, (key, value) => {
+    if (key === "publicKey") {
+      return safeBufferFrom(value as string);
+    }
+    return value;
+  });
 };

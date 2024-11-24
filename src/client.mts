@@ -1,13 +1,12 @@
 import { Buffer } from "node:buffer";
 import z from "zod";
-import { dnsRecordReviver, type DnsRecord } from "./helper/dns-record.mts";
 import type { RegistryInfo } from "./api/registry.mts";
 import { signRequest, verifyRequest } from "./helper/auth-request.mts";
 import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
+import { dnsRecordParser, type DnsRecord } from "./helper/dns-record.mts";
 import type { ZodBuffer, ZodUrl } from "./helper/mod.mts";
 import { toSafeBuffer } from "./helper/safe-buffer-code.mts";
 import { z_buffer, z_url } from "./helper/z-custom.mts";
-import { stat } from "node:fs";
 export type { DnsRecord };
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
@@ -97,7 +96,7 @@ export const registry = async (
     if (!res.ok) {
       throw new Error(`[${res.status}] ${res.statusText}`);
     }
-    return JSON.parse(await res.text(), dnsRecordReviver) as DnsRecord;
+    return dnsRecordParser(await res.text());
   };
   return {
     url: api_url,
@@ -184,7 +183,7 @@ export const query = (
     if (false === res.ok) {
       throw new Error(`[${res.status}] ${res.statusText}`);
     }
-    const dnsRecord: DnsRecord = JSON.parse(await res.text(), dnsRecordReviver);
+    const dnsRecord: DnsRecord = dnsRecordParser(await res.text());
     if (false === dnsRecord.publicKey.equals(dnsRecord.publicKey)) {
       throw new Error("public key no match");
     }
@@ -218,6 +217,6 @@ export const queryDnsRecord: (
   if (res.ok === false) {
     throw new Error(`[${res.status}] ${res.statusText}`);
   }
-  const dnsRecord: DnsRecord = JSON.parse(await res.text(), dnsRecordReviver);
+  const dnsRecord: DnsRecord = dnsRecordParser(await res.text());
   return dnsRecord;
 };
