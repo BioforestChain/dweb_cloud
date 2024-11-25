@@ -16,7 +16,7 @@ export const startGateway = (
   db: DnsDB,
   host: string,
   port: number,
-  options: { cert?: string; key?: string } = {},
+  options: { cert?: string; key?: string } = {}
 ): Promise<AddressInfo> => {
   let origin = host;
   if (false == origin.includes("://")) {
@@ -39,11 +39,16 @@ export const startGateway = (
   > = async (req, res) => {
     try {
       /// 网关转发
-      const hostname = req.headers.host?.split(":").at(0);
-      if (hostname && await db.dnsTable.has(hostname)) {
+      const hostname = (
+        req.headersDistinct["x-dweb-cloud-host"] ?? req.headersDistinct.host
+      )
+        ?.at(0)
+        ?.split(":")
+        .at(0);
+      if (hostname && (await db.dnsTable.has(hostname))) {
         const target = (await db.dnsTable.get(hostname))!;
         const { pathname, search } = new URL(
-          `http://localhost${req.url ?? "/"}`,
+          `http://localhost${req.url ?? "/"}`
         );
         console.log("gateway", hostname, "=>", target, pathname, search);
         const forwarded_req = http.request(
@@ -56,7 +61,7 @@ export const startGateway = (
           },
           (forwarded_res) => {
             forwarded_res.pipe(res);
-          },
+          }
         );
         req.pipe(forwarded_req);
         return;
@@ -93,7 +98,7 @@ export const startGateway = (
         cert: fs.readFileSync(cert_filename),
         key: fs.readFileSync(key_filename),
       },
-      onRequest,
+      onRequest
     );
   } else {
     server = http.createServer(onRequest);
@@ -103,7 +108,7 @@ export const startGateway = (
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
     console.info(
-      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`,
+      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`
     );
   });
   return job.promise;
