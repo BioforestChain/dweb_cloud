@@ -5,13 +5,14 @@ import http from "node:http";
 import https from "node:https";
 import type { AddressInfo } from "node:net";
 import { z } from "zod";
-import { dnsTable } from "./api/dns-table.mts";
+import { createMemoryDnsDb, type DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { registry } from "./api/registry.mts";
 import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
 import { setupVerbose } from "./helper/logger.mts";
 import { startMdnsServer } from "./mdns.mts";
 export const startGateway = (
+  db: DnsDB,
   host: string,
   port: number,
   options: { cert?: string; key?: string } = {},
@@ -28,45 +29,54 @@ export const startGateway = (
   };
 
   if (gateway.hostname.endsWith(".local")) {
-    startMdnsServer(gateway.hostname);
+    startMdnsServer(db, gateway.hostname);
   }
 
   const onRequest: http.RequestListener<
     typeof http.IncomingMessage,
     typeof http.ServerResponse
   > = async (req, res) => {
-    /// 网关转发
-    const hostname = req.headers.host?.split(":").at(0);
-    if (hostname && dnsTable.has(hostname)) {
-      const target = dnsTable.get(hostname)!;
-      const { pathname, search } = new URL(`http://localhost${req.url ?? "/"}`);
-      console.log("gateway", hostname, "=>", target, pathname, search);
-      const forwarded_req = http.request(
-        {
-          hostname: target.hostname,
-          port: target.port,
-          method: req.method,
-          path: pathname + search,
-          headers: req.headers,
-        },
-        (forwarded_res) => {
-          forwarded_res.pipe(res);
-        },
-      );
-      req.pipe(forwarded_req);
-      return;
-    }
+    try {
+      /// 网关转发
+      const hostname = req.headers.host?.split(":").at(0);
+      if (hostname && await db.dnsTable.has(hostname)) {
+        const target = (await db.dnsTable.get(hostname))!;
+        const { pathname, search } = new URL(
+          `http://localhost${req.url ?? "/"}`,
+        );
+        console.log("gateway", hostname, "=>", target, pathname, search);
+        const forwarded_req = http.request(
+          {
+            hostname: target.hostname,
+            port: target.port,
+            method: req.method,
+            path: pathname + search,
+            headers: req.headers,
+          },
+          (forwarded_res) => {
+            forwarded_res.pipe(res);
+          },
+        );
+        req.pipe(forwarded_req);
+        return;
+      }
 
-    /// 网关服务
-    const { pathname, searchParams } = new URL(`http://localhost${req.url}`);
-    if (pathname === "/registry") {
-      return await registry(gateway, req, res);
+      /// 网关服务
+      const { pathname, searchParams } = new URL(`http://localhost${req.url}`);
+      if (pathname === "/registry") {
+        return await registry(db, gateway, req, res);
+      }
+      if (pathname === "/query") {
+        return await query(db, searchParams, req, res);
+      }
+      res.statusCode = 404;
+      return res.end("Not Found");
+    } catch (e) {
+      if (false === res.writableEnded) {
+        res.statusCode = 500;
+        res.end(e instanceof Error ? e.stack ?? e.message : String(e));
+      }
     }
-    if (pathname === "/query") {
-      return await query(searchParams, req, res);
-    }
-    res.statusCode = 404;
-    return res.end("Not Found");
   };
 
   let server: https.Server | http.Server;
@@ -109,5 +119,6 @@ if (import_meta_ponyfill(import.meta).main) {
   });
   const hostname = getDefaultHost({ cliArgs });
   const port = getDefaultPort({ cliArgs });
-  void startGateway(hostname, port, cliArgs);
+  const db = createMemoryDnsDb();
+  void startGateway(db, hostname, port, cliArgs);
 }

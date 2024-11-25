@@ -1,14 +1,14 @@
 import dns from "node:dns";
 import type http from "node:http";
 import z from "zod";
-import { dnsAddressTable, dnsTable } from "./dns-table.mts";
+import type { DnsDB } from "./dns-table.mts";
 
 import { authRequestWithBody } from "../helper/auth-request.mts";
+import { type DnsRecord, dnsRecordStringify } from "../helper/dns-record.mts";
 import { ResponseError } from "../helper/response-error.mts";
 import { responseJson } from "../helper/response-success.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
-import { dnsRecordStringify, type DnsRecord } from "../helper/dns-record.mts";
 export const $RegistryInfo: z.ZodObject<{
   auth: z.ZodUnion<
     [
@@ -19,7 +19,7 @@ export const $RegistryInfo: z.ZodObject<{
       z.ZodObject<{
         algorithm: z.ZodEnum<["web3"]>;
         publicKey: z.ZodString;
-      }>
+      }>,
     ]
   >;
   service: z.ZodUnion<
@@ -33,7 +33,7 @@ export const $RegistryInfo: z.ZodObject<{
         mode: z.ZodEnum<["vm"]>;
         type: z.ZodEnum<["script", "module"]>;
         href: z.ZodString;
-      }>
+      }>,
     ]
   >;
 }> = z.object({
@@ -67,32 +67,33 @@ export const $RegistryInfo: z.ZodObject<{
 });
 export type RegistryInfo = typeof $RegistryInfo._type;
 export const registry = async (
+  db: DnsDB,
   gateway: { protocol: string; hostname: string; port: number },
   req: http.IncomingMessage,
-  res: http.ServerResponse
+  res: http.ServerResponse,
 ) => {
   const { rawBody, from_hostname, publicKey, address } =
     await authRequestWithBody(req, res);
 
   const registryInfo = $RegistryInfo.parse(
-    JSON.parse(z_buffer.parse(rawBody).toString("utf-8"))
+    JSON.parse(z_buffer.parse(rawBody).toString("utf-8")),
   );
   if (registryInfo.auth.algorithm !== "bioforestchain") {
     throw new ResponseError(
       500,
-      `No support '${registryInfo.auth.algorithm}' auth yet.`
+      `No support '${registryInfo.auth.algorithm}' auth yet.`,
     ).end(res);
   }
   if (registryInfo.service.mode !== "http") {
     throw new ResponseError(
       500,
-      `No support '${registryInfo.service.mode}' service yet.`
+      `No support '${registryInfo.service.mode}' service yet.`,
     ).end(res);
   }
   /// 公钥要一致
   if (false === publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey))) {
     throw new ResponseError(403, `fail to registry, publicKey no match.`).end(
-      res
+      res,
     );
   }
   // /// 发起域名要和注册的域名一致
@@ -111,14 +112,15 @@ export const registry = async (
   if (false === from_hostname.endsWith(hostname_suffix)) {
     throw new ResponseError(
       403,
-      "fail to registry, hostname no belongs to gateway."
+      "fail to registry, hostname no belongs to gateway.",
     ).end(res);
   }
 
   /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
   const lookupHostname = registryInfo.service.hostname ?? from_hostname;
   const lookupResult = await dns.promises.lookup(lookupHostname);
-  const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
+  const registry_origin =
+    `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {
     ...registryInfo.service,
     origin: registry_origin,
@@ -129,9 +131,9 @@ export const registry = async (
     publicKey,
     peerAddress: address,
   };
-  dnsTable.set(from_hostname, dnsRecord);
+  await db.dnsTable.set(from_hostname, dnsRecord);
 
-  dnsAddressTable.set(address, {
+  await db.addressTable.set(address, {
     mode: "address",
     hostname: from_hostname,
   });
