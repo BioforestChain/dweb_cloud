@@ -3,10 +3,11 @@ import z from "zod";
 import type { RegistryInfo } from "./api/registry.mts";
 import { signRequest, verifyRequest } from "./helper/auth-request.mts";
 import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
-import { dnsRecordParser, type DnsRecord } from "./helper/dns-record.mts";
+import { type DnsRecord, dnsRecordParser } from "./helper/dns-record.mts";
 import type { ZodBuffer, ZodUrl } from "./helper/mod.mts";
 import { toSafeBuffer } from "./helper/safe-buffer-code.mts";
 import { z_buffer, z_url } from "./helper/z-custom.mts";
+import type { PromiseMaybe } from "@gaubee/util";
 export type { DnsRecord };
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
@@ -39,26 +40,26 @@ export type RegistryArgs = typeof $RegistryArgs._type;
  * @returns
  */
 export const registry = async (
-  args: RegistryArgs
+  args: RegistryArgs,
 ): Promise<{
   url: URL;
   method: string;
   headers: Record<string, string>;
   body: Buffer;
   info: RegistryInfo;
-  request: () => Promise<DnsRecord>;
+  fetchRegistry: (customFetch?: typeof fetch) => Promise<Response>;
+  parseRegistry: (res?: PromiseMaybe<Response>) => Promise<DnsRecord>;
 }> => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
-  const keypair =
-    typeof keypair_or_secret === "string"
-      ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
-      : keypair_or_secret;
+  const keypair = typeof keypair_or_secret === "string"
+    ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
+    : keypair_or_secret;
   const gateway_url = new URL(gateway);
   const { hostname: gateway_hostname } = gateway_url;
 
   const address = await bfmetaSignUtil.getAddressFromPublicKey(
-    keypair.publicKey
+    keypair.publicKey,
   );
   const my_hostname = (
     gateway_hostname.endsWith(".local")
@@ -85,14 +86,18 @@ export const registry = async (
     my_hostname,
     api_url,
     method,
-    body
+    body,
   );
-  const request = async () => {
-    const res = await fetch(api_url, {
+  const fetchRegistry = (customFetch = fetch) =>
+    customFetch(api_url, {
       method: method,
       headers: headers,
       body: body,
     });
+  const parseRegistry = async (
+    res: PromiseMaybe<Response> = fetchRegistry(),
+  ) => {
+    res = await res;
     if (!res.ok) {
       throw new Error(`[${res.status}] ${res.statusText}`);
     }
@@ -104,12 +109,13 @@ export const registry = async (
     headers,
     body,
     info,
-    request,
+    fetchRegistry,
+    parseRegistry,
   };
 };
 
 export const createBioforestChainKeypairBySecretKeyString = async (
-  secret: string
+  secret: string,
 ): Promise<{
   privateKey: Buffer;
   publicKey: Buffer;
@@ -122,101 +128,52 @@ export const createBioforestChainKeypairBySecretKeyString = async (
     publicKey: keypair.publicKey as Buffer,
     get address() {
       return bfmetaSignUtil.getAddressFromPublicKey(
-        keypair.publicKey as Buffer
+        keypair.publicKey as Buffer,
       );
     },
   };
 };
 
 export const createBioforestChainAddressByPublicKey = (
-  publicKey: Buffer
+  publicKey: Buffer,
 ): Promise<string> => {
   return bfmetaSignUtil.getAddressFromPublicKey(publicKey as Buffer);
 };
 
-/** 查询接口 */
-export const query = (
-  req_url: string,
-  req_method: string,
-  req_headers: Headers,
-  req_body: Uint8Array | undefined | (() => Promise<Uint8Array | undefined>),
-  gateway_url: URL,
-  self_hostname?: string
-):
-  | {
-      api_url: URL;
-      method: string;
-      info: Omit<ReturnType<typeof verifyRequest>, "verify">;
-      verify: () => Promise<boolean>;
-      getDnsRecord: (res?: Response | Promise<Response>) => Promise<DnsRecord>;
-    }
-  | undefined => {
-  /// 首先，算法协议是否支持
-  if (req_headers.get("x-dweb-cloud-algorithm") !== "bioforestchain") {
-    return;
-  }
-  const { verify, ...info } = verifyRequest(
-    req_url,
-    req_method,
-    req_headers,
-    req_body
-  );
-  /// 然后检查发送目标是不是自己
-  if (self_hostname != null && info.to_hostname !== self_hostname) {
-    return;
-  }
-  /// 接着检查发送着的信息
-  const from_origin = req_headers.get("x-dweb-cloud-origin");
-  if (from_origin == null) {
-    return;
-  }
-  const { hostname: from_hostname } = new URL(from_origin);
-  const api_url = new URL(gateway_url);
-  api_url.pathname = "/query";
-  api_url.searchParams.set("hostname", from_hostname);
-  const method = "GET";
-
-  const getDnsRecord = async (
-    res: Response | Promise<Response> = fetch(api_url, { method })
-  ) => {
-    res = await res;
-    if (false === res.ok) {
-      throw new Error(`[${res.status}] ${res.statusText}`);
-    }
-    const dnsRecord: DnsRecord = dnsRecordParser(await res.text());
-    if (false === dnsRecord.publicKey.equals(dnsRecord.publicKey)) {
-      throw new Error("public key no match");
-    }
-    if (false === (await verify())) {
-      throw new Error("fail to veriy");
-    }
-    return dnsRecord;
-  };
-  return {
-    api_url,
-    method,
-    info,
-    verify,
-    getDnsRecord,
-  };
-};
-
 export const queryDnsRecord: (
   gateway_origin: string | URL,
-  search: { hostname: string } | { address: string }
-) => Promise<DnsRecord> = async (
+  search: {
+    hostname: string;
+  } | {
+    address: string;
+  },
+) => {
+  gateway_url: URL;
+  fetchDnsRecord: (customFetch?: typeof fetch) => Promise<Response>;
+  parseDnsRecord: (res?: Response | Promise<Response>) => Promise<DnsRecord>;
+} = (
   gateway_origin: string | URL,
-  search: { hostname: string } | { address: string }
+  search: { hostname: string } | { address: string },
 ) => {
   const gateway_url = new URL(gateway_origin);
   gateway_url.pathname = "/query";
   for (const key in search) {
     gateway_url.searchParams.set(key, search[key as keyof typeof search]);
   }
-  const res = await fetch(gateway_url);
-  if (res.ok === false) {
-    throw new Error(`[${res.status}] ${res.statusText}`);
-  }
-  const dnsRecord: DnsRecord = dnsRecordParser(await res.text());
-  return dnsRecord;
+
+  const fetchDnsRecord = (customFetch = fetch) => customFetch(gateway_url);
+  const parseDnsRecord = async (
+    res: PromiseMaybe<Response> = fetchDnsRecord(),
+  ) => {
+    res = await res;
+    if (false === res.ok) {
+      throw new Error(`[${res.status}] ${res.statusText}`);
+    }
+    return dnsRecordParser(await res.text());
+  };
+  return {
+    gateway_url,
+    fetchDnsRecord,
+    parseDnsRecord,
+  };
 };
