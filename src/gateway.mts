@@ -11,6 +11,7 @@ import { registry } from "./api/registry.mts";
 import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
 import { setupVerbose } from "./helper/logger.mts";
 import { startMdnsServer } from "./mdns.mts";
+export * from "./api/dns-table.mts";
 export const startGateway = (
   db: DnsDB,
   host: string,

@@ -1,6 +1,6 @@
 {
   "name": "@dweb/cloud",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "exports": {
     "./gateway": "./src/gateway.mts",
     "./helper": "./src/helper/mod.mts",
