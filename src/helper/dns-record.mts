@@ -1,4 +1,4 @@
-import { Buffer } from "node:buffer";
+import type { Buffer } from "node:buffer";
 import { z } from "zod";
 import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
 import { z_buffer, type ZodBuffer } from "./z-custom.mts";
@@ -8,7 +8,7 @@ export const $DnsRecord: z.ZodObject<{
   origin: z.ZodString;
   hostname: z.ZodString;
   lookupHostname: z.ZodString;
-  address: z.ZodString;
+  ipAddress: z.ZodString;
   family: z.ZodUnion<[z.ZodLiteral<4>, z.ZodLiteral<6>]>;
   port: z.ZodNumber;
   publicKey: ZodBuffer;
@@ -18,7 +18,7 @@ export const $DnsRecord: z.ZodObject<{
   origin: z.string(),
   hostname: z.string(),
   lookupHostname: z.string(),
-  address: z.string(),
+  ipAddress: z.string(),
   family: z.union([z.literal(4), z.literal(6)]),
   port: z.number(),
   publicKey: z_buffer,
@@ -36,16 +36,15 @@ export const $DnsAddressRecord: z.ZodObject<{
 export type DnsAddressRecord = typeof $DnsAddressRecord._type; //
 
 export const dnsRecordStringify: (data: DnsRecord) => string = (data) => {
-  Reflect.set(data.publicKey, "toJSON", function (this: Buffer) {
-    return this;
-  });
-  const json = JSON.stringify(data, (key, value) => {
+  const json = JSON.stringify({
+    ...data,
+    publicKey: data.publicKey.toString("hex"),
+  }, (key, value) => {
     if (key === "publicKey") {
       return toSafeBuffer(value as Buffer, "hex");
     }
     return value;
   });
-  Reflect.deleteProperty(data.publicKey, "toJSON");
   return json;
 };
 export const dnsRecordParser: (data: string) => DnsRecord = (data) => {

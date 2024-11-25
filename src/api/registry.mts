@@ -126,7 +126,7 @@ export const registry = async (
     origin: registry_origin,
     hostname: from_hostname,
     lookupHostname,
-    address: lookupResult.address,
+    ipAddress: lookupResult.address,
     family: lookupResult.family as 4 | 6,
     publicKey,
     peerAddress: address,

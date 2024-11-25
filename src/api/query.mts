@@ -10,7 +10,7 @@ export const query = async (
   _req: http.IncomingMessage,
   res: http.ServerResponse,
 ) => {
-  const address = z.string().optional().parse(qs.get("address"));
+  const address = z.string().nullable().parse(qs.get("address"));
   const addressInfo = address ? await db.addressTable.get(address) : undefined;
 
   const hostname = addressInfo?.hostname ??
