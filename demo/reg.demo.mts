@@ -23,7 +23,7 @@ export const doReg = async (args: {
     },
   });
   console.debug(packet.url.href, packet.headers, packet.info);
-  const dnsRecord = await packet.request();
+  const dnsRecord = await packet.parseRegistry();
 
   console.info("registry success", `${dnsRecord.origin}/test`);
   return dnsRecord;

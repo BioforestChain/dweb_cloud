@@ -6,7 +6,7 @@ export const getNodeReqBody = async (
   if (req.method === "GET" || req.method === "HEAD") {
     return;
   }
-  if (+(req.headers["content-length"] ?? 0) > 0) {
+  if (req.headers["content-length"] !== "0") {
     const chunks: Uint8Array[] = [];
     for await (const chunk of req) {
       chunks.push(chunk);

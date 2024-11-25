@@ -40,9 +40,6 @@ export const signRequest = async (
   headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
   headers["x-dweb-cloud-signature"] = toSafeBuffer(signature as Buffer);
 
-  console.debug("signMsg", signMsg.toString());
-  console.debug("signature", signature.toString("hex"));
-  console.debug("publicKey", keypair.publicKey.toString("hex"));
   return headers;
 };
 
