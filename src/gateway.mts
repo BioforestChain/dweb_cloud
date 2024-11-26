@@ -1,15 +1,11 @@
-import { parseArgs } from "@std/cli/parse-args";
-import import_meta_ponyfill from "import-meta-ponyfill";
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import type { AddressInfo } from "node:net";
 import { z } from "zod";
-import { createMemoryDnsDb, type DnsDB } from "./api/dns-table.mts";
+import { type DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { registry } from "./api/registry.mts";
-import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
-import { setupVerbose } from "./helper/logger.mts";
 export * from "./api/dns-table.mts";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
@@ -120,18 +116,3 @@ export const startGateway = async (
   });
   return job.promise;
 };
-
-if (import_meta_ponyfill(import.meta).main) {
-  setupVerbose();
-  const cliArgs = parseArgs(getCliArgs(), {
-    string: ["host", "port", "cert", "key"],
-    alias: {
-      host: "h",
-      port: "p",
-    },
-  });
-  const hostname = getDefaultHost({ cliArgs });
-  const port = getDefaultPort({ cliArgs });
-  const db = createMemoryDnsDb();
-  void startGateway(db, hostname, port, cliArgs);
-}

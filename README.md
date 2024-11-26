@@ -6,7 +6,7 @@
 
 ```bash
 # 启动网关
-npx tsx ./src/gateway.mts --host gaubee.local --port 8080
+npx tsx ./src/gateway.demo.mts --host gaubee.local --port 8080
 # 启动服务，注册到网关中
 npx tsx ./demo/service.demo.mts --gateway=http://gaubee.local:8080/ --secret=qaq
 

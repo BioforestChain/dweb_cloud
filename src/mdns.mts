@@ -1,7 +1,5 @@
-import import_meta_ponyfill from "import-meta-ponyfill";
 import makeMdns, { type ResponseOutgoingPacket } from "multicast-dns";
 import os from "node:os";
-import { getDefaultHost } from "./args.mts";
 export const startMdnsServer = (hostname: string) => {
   if (hostname.split(".").length > 2) {
     throw new Error(
@@ -92,8 +90,3 @@ const ip_to_number = (ip: string) => {
   const [a, b, c, d] = ip.split(".").map(Number);
   return a * pow24 + b * pow16 + c * pow8 + d;
 };
-
-if (import_meta_ponyfill(import.meta).main) {
-  const hostname = await getDefaultHost();
-  startMdnsServer(hostname);
-}
