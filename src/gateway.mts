@@ -4,19 +4,19 @@ import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import type { AddressInfo } from "node:net";
+import process from "node:process";
 import { z } from "zod";
 import { createMemoryDnsDb, type DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { registry } from "./api/registry.mts";
 import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
 import { setupVerbose } from "./helper/logger.mts";
-import { startMdnsServer } from "./mdns.mts";
 export * from "./api/dns-table.mts";
-export const startGateway = (
+export const startGateway = async (
   db: DnsDB,
   host: string,
   port: number,
-  options: { cert?: string; key?: string } = {}
+  options: { cert?: string; key?: string } = {},
 ): Promise<AddressInfo> => {
   let origin = host;
   if (false == origin.includes("://")) {
@@ -29,8 +29,12 @@ export const startGateway = (
     port: origin_url.port ? +origin_url.port : port,
   };
 
-  if (gateway.hostname.endsWith(".local")) {
-    startMdnsServer(db, gateway.hostname);
+  if (
+    process.env.DWEB_CLOUD_DISABLE_MDNS !== "true" &&
+    gateway.hostname.endsWith(".local")
+  ) {
+    const { startMdnsServer } = await import("./mdns.mts");
+    startMdnsServer(gateway.hostname);
   }
 
   const onRequest: http.RequestListener<
@@ -48,7 +52,7 @@ export const startGateway = (
       if (hostname && (await db.dnsTable.has(hostname))) {
         const target = (await db.dnsTable.get(hostname))!;
         const { pathname, search } = new URL(
-          `http://localhost${req.url ?? "/"}`
+          `http://localhost${req.url ?? "/"}`,
         );
         console.log("gateway", hostname, "=>", target, pathname, search);
         const forwarded_req = http.request(
@@ -61,7 +65,7 @@ export const startGateway = (
           },
           (forwarded_res) => {
             forwarded_res.pipe(res);
-          }
+          },
         );
         req.pipe(forwarded_req);
         return;
@@ -98,7 +102,7 @@ export const startGateway = (
         cert: fs.readFileSync(cert_filename),
         key: fs.readFileSync(key_filename),
       },
-      onRequest
+      onRequest,
     );
   } else {
     server = http.createServer(onRequest);
@@ -108,7 +112,7 @@ export const startGateway = (
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
     console.info(
-      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`
+      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`,
     );
   });
   return job.promise;

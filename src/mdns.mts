@@ -1,9 +1,9 @@
+import import_meta_ponyfill from "import-meta-ponyfill";
 import makeMdns, { type ResponseOutgoingPacket } from "multicast-dns";
 import os from "node:os";
-import import_meta_ponyfill from "import-meta-ponyfill";
+import { createMemoryDnsDb } from "./api/dns-table.mts";
 import { getDefaultHost } from "./args.mts";
-import { createMemoryDnsDb, type DnsDB } from "./api/dns-table.mts";
-export const startMdnsServer = (db: DnsDB, hostname: string, port = 80) => {
+export const startMdnsServer = (hostname: string) => {
   if (hostname.split(".").length > 2) {
     throw new Error(
       "The '.local' domain does not support subdomains and must be in the top-level domain.",
@@ -30,10 +30,10 @@ export const startMdnsServer = (db: DnsDB, hostname: string, port = 80) => {
             .filter((ipv4) => {
               return (
                 ipv4.masterAddress ===
-                  getMasterAddress({
-                    address: rinfo.address,
-                    netmask: ipv4.netmask,
-                  })
+                getMasterAddress({
+                  address: rinfo.address,
+                  netmask: ipv4.netmask,
+                })
               );
             })
             .map(
@@ -45,7 +45,7 @@ export const startMdnsServer = (db: DnsDB, hostname: string, port = 80) => {
                   ttl: 300,
                   flash: true,
                   data: ipv4.address,
-                }) as Answer,
+                } as Answer),
             ),
         );
       }
@@ -96,6 +96,5 @@ const ip_to_number = (ip: string) => {
 
 if (import_meta_ponyfill(import.meta).main) {
   const hostname = await getDefaultHost();
-  const db = createMemoryDnsDb();
-  startMdnsServer(db, hostname);
+  startMdnsServer(hostname);
 }
