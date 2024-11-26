@@ -1,6 +1,10 @@
 {
   "name": "@dweb/cloud",
-  "version": "0.2.9",
+  "version": "0.3.0",
+  "tasks": {
+    "gateway": "node ./src/gateway.demo.mts",
+    "mdns": "node ./src/mdns.demo.mts"
+  },
   "exports": {
     "./gateway": "./src/gateway.mts",
     "./helper": "./src/helper/mod.mts",
