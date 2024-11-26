@@ -1,6 +1,6 @@
 {
   "name": "@dweb/cloud",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "tasks": {
     "gateway": "node ./src/gateway.demo.mts",
     "mdns": "node ./src/mdns.demo.mts"

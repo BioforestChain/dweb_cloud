@@ -3,7 +3,7 @@ import http from "node:http";
 import https from "node:https";
 import type { AddressInfo } from "node:net";
 import { z } from "zod";
-import { type DnsDB } from "./api/dns-table.mts";
+import type { DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { registry } from "./api/registry.mts";
 export * from "./api/dns-table.mts";
@@ -29,7 +29,7 @@ export const startGateway = async (
       typeof DWEB_CLOUD_DISABLE_MDNS === "boolean" &&
       DWEB_CLOUD_DISABLE_MDNS
     ) {
-      console.warn("MDNS DISABLED");
+      console.warn("MDNS DISABLED", gateway.hostname);
     } else {
       const { startMdnsServer } = await import("./mdns.mts");
       startMdnsServer(gateway.hostname);
