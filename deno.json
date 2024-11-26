@@ -5,7 +5,7 @@
     "./gateway": "./src/gateway.mts",
     "./helper": "./src/helper/mod.mts",
     "./client": "./src/client.mts",
-    "./gateway-demo": "./src/gateway-demo",
-    "./mdns-demo": "./src/mdns-demo"
+    "./gateway-demo": "./src/gateway.demo.mts",
+    "./mdns-demo": "./src/mdns.demo.mts"
   }
 }
