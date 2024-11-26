@@ -1,7 +1,6 @@
 import import_meta_ponyfill from "import-meta-ponyfill";
 import makeMdns, { type ResponseOutgoingPacket } from "multicast-dns";
 import os from "node:os";
-import { createMemoryDnsDb } from "./api/dns-table.mts";
 import { getDefaultHost } from "./args.mts";
 export const startMdnsServer = (hostname: string) => {
   if (hostname.split(".").length > 2) {

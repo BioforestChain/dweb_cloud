@@ -4,7 +4,6 @@ import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
 import type { AddressInfo } from "node:net";
-import process from "node:process";
 import { z } from "zod";
 import { createMemoryDnsDb, type DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
@@ -12,6 +11,7 @@ import { registry } from "./api/registry.mts";
 import { getCliArgs, getDefaultHost, getDefaultPort } from "./args.mts";
 import { setupVerbose } from "./helper/logger.mts";
 export * from "./api/dns-table.mts";
+declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
   db: DnsDB,
   host: string,
@@ -28,13 +28,16 @@ export const startGateway = async (
     hostname: origin_url.hostname,
     port: origin_url.port ? +origin_url.port : port,
   };
-
-  if (
-    process.env.DWEB_CLOUD_DISABLE_MDNS !== "true" &&
-    gateway.hostname.endsWith(".local")
-  ) {
-    const { startMdnsServer } = await import("./mdns.mts");
-    startMdnsServer(gateway.hostname);
+  if (gateway.hostname.endsWith(".local")) {
+    if (
+      typeof DWEB_CLOUD_DISABLE_MDNS === "boolean" &&
+      DWEB_CLOUD_DISABLE_MDNS
+    ) {
+      console.warn("MDNS DISABLED");
+    } else {
+      const { startMdnsServer } = await import("./mdns.mts");
+      startMdnsServer(gateway.hostname);
+    }
   }
 
   const onRequest: http.RequestListener<
