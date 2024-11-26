@@ -1,9 +1,11 @@
 {
   "name": "@dweb/cloud",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "exports": {
     "./gateway": "./src/gateway.mts",
     "./helper": "./src/helper/mod.mts",
-    "./client": "./src/client.mts"
+    "./client": "./src/client.mts",
+    "./gateway-demo": "./src/gateway-demo",
+    "./mdns-demo": "./src/mdns-demo"
   }
 }
