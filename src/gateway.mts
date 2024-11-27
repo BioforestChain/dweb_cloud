@@ -10,10 +10,15 @@ export * from "./api/dns-table.mts";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
   db: DnsDB,
-  host: string,
-  port: number,
-  options: { cert?: string; key?: string } = {},
+  options: {
+    host: string;
+    port: number;
+    sep: string;
+    cert?: string;
+    key?: string;
+  },
 ): Promise<AddressInfo> => {
+  const { host, port } = options;
   let origin = host;
   if (false == origin.includes("://")) {
     origin = "http://" + host;
@@ -23,6 +28,7 @@ export const startGateway = async (
     protocol: origin_url.protocol,
     hostname: origin_url.hostname,
     port: origin_url.port ? +origin_url.port : port,
+    sep: options.sep,
   };
   if (gateway.hostname.endsWith(".local")) {
     if (

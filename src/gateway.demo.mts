@@ -13,8 +13,13 @@ if (import_meta_ponyfill(import.meta).main) {
       port: "p",
     },
   });
-  const hostname = getDefaultHost({ cliArgs });
+  const host = getDefaultHost({ cliArgs });
   const port = getDefaultPort({ cliArgs });
   const db = createMemoryDnsDb();
-  void startGateway(db, hostname, port, cliArgs);
+  void startGateway(db, {
+    ...cliArgs,
+    host,
+    port,
+    sep: "-",
+  });
 }

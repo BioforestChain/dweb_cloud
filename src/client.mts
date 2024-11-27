@@ -11,6 +11,7 @@ import type { PromiseMaybe } from "@gaubee/util";
 export type { DnsRecord };
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
+  gateway_sep: z.ZodString;
   keypair: z.ZodUnion<
     [z.ZodString, z.ZodObject<{ privateKey: ZodBuffer; publicKey: ZodBuffer }>]
   >;
@@ -22,6 +23,7 @@ export const $RegistryArgs: z.ZodObject<{
   }>;
 }> = z.object({
   gateway: z_url,
+  gateway_sep: z.string(),
   keypair: z.union([
     z.string(),
     z.object({ privateKey: z_buffer, publicKey: z_buffer }),
@@ -52,9 +54,10 @@ export const registry = async (
 }> => {
   $RegistryArgs.parse(args);
   const { gateway, keypair: keypair_or_secret } = args;
-  const keypair = typeof keypair_or_secret === "string"
-    ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
-    : keypair_or_secret;
+  const keypair =
+    typeof keypair_or_secret === "string"
+      ? await createBioforestChainKeypairBySecretKeyString(keypair_or_secret)
+      : keypair_or_secret;
   const gateway_url = new URL(gateway);
   const { hostname: gateway_hostname } = gateway_url;
 
@@ -62,9 +65,9 @@ export const registry = async (
     keypair.publicKey,
   );
   const my_hostname = (
-    gateway_hostname.endsWith(".local")
-      ? `${address}-${gateway_hostname}`
-      : `${address}.${gateway_hostname}`
+    address +
+    args.gateway_sep +
+    gateway_hostname
   ).toLowerCase();
   const info = {
     auth: {
@@ -142,11 +145,13 @@ export const createBioforestChainAddressByPublicKey = (
 
 export const queryDnsRecord: (
   gateway_origin: string | URL,
-  search: {
-    hostname: string;
-  } | {
-    address: string;
-  },
+  search:
+    | {
+        hostname: string;
+      }
+    | {
+        address: string;
+      },
 ) => {
   gateway_url: URL;
   fetchDnsRecord: (customFetch?: typeof fetch) => Promise<Response>;

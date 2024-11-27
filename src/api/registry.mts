@@ -66,9 +66,15 @@ export const $RegistryInfo: z.ZodObject<{
   ]),
 });
 export type RegistryInfo = typeof $RegistryInfo._type;
+export type GatewayConfig = {
+  protocol: string;
+  hostname: string;
+  sep: string;
+  port: number;
+};
 export const registry = async (
   db: DnsDB,
-  gateway: { protocol: string; hostname: string; port: number },
+  gateway: GatewayConfig,
   req: http.IncomingMessage,
   res: http.ServerResponse,
 ) => {
@@ -103,12 +109,7 @@ export const registry = async (
   //   );
   // }
   /// 注册的域名要归属于网关
-  let hostname_suffix: string;
-  if (gateway.hostname.endsWith(".local")) {
-    hostname_suffix = `-${gateway.hostname}`;
-  } else {
-    hostname_suffix = `.${gateway.hostname}`;
-  }
+  const hostname_suffix = gateway.sep + gateway.hostname;
   if (false === from_hostname.endsWith(hostname_suffix)) {
     throw new ResponseError(
       403,
@@ -119,8 +120,7 @@ export const registry = async (
   /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
   const lookupHostname = registryInfo.service.hostname ?? from_hostname;
   const lookupResult = await dns.promises.lookup(lookupHostname);
-  const registry_origin =
-    `${gateway.protocol}//${from_hostname}:${gateway.port}`;
+  const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {
     ...registryInfo.service,
     origin: registry_origin,
