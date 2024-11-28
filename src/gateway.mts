@@ -5,7 +5,7 @@ import type { AddressInfo } from "node:net";
 import { z } from "zod";
 import type { DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
-import { registry } from "./api/registry.mts";
+import { fastDnsRecordByHostname, registry } from "./api/registry.mts";
 export * from "./api/dns-table.mts";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
@@ -55,17 +55,18 @@ export const startGateway = async (
         ?.split(":")
         .at(0);
       if (hostname && (await db.dnsTable.has(hostname))) {
-        const target = (await db.dnsTable.get(hostname))!;
-        const { pathname, search } = new URL(
-          `http://localhost${req.url ?? "/"}`,
+        const { dnsRecord, lookup } = await fastDnsRecordByHostname(
+          db,
+          gateway,
+          hostname,
         );
-        console.log("gateway", hostname, "=>", target, pathname, search);
+        console.info("[GATEWAY]", hostname, req.url);
         const forwarded_req = http.request(
           {
-            hostname: target.hostname,
-            port: target.port,
+            hostname: lookup.address,
+            port: dnsRecord.port,
             method: req.method,
-            path: pathname + search,
+            path: req.url ?? "/",
             headers: req.headers,
           },
           (forwarded_res) => {
@@ -77,15 +78,18 @@ export const startGateway = async (
       }
 
       /// 网关服务
-      const { pathname, searchParams } = new URL(`http://localhost${req.url}`);
-      if (pathname === "/registry") {
+      const { pathname, searchParams } = new URL(
+        req.url ?? "",
+        "https://parse.url",
+      );
+      if (pathname === "/registry" && req.method === "POST") {
         return await registry(db, gateway, req, res);
       }
-      if (pathname === "/query") {
+      if (pathname === "/query" && req.method === "GET") {
         return await query(db, searchParams, req, res);
       }
       res.statusCode = 404;
-      return res.end("Not Found");
+      return res.end("Hello Dweb Cloud.");
     } catch (e) {
       if (false === res.writableEnded) {
         res.statusCode = 500;

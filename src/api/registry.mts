@@ -4,11 +4,17 @@ import z from "zod";
 import type { DnsDB } from "./dns-table.mts";
 
 import { authRequestWithBody } from "../helper/auth-request.mts";
-import { type DnsRecord, dnsRecordStringify } from "../helper/dns-record.mts";
+import {
+  type DnsRecord,
+  DnsRecordLookup,
+  dnsRecordStringify,
+} from "../helper/dns-record.mts";
 import { ResponseError } from "../helper/response-error.mts";
 import { responseJson } from "../helper/response-success.mts";
 import { safeBufferFrom } from "../helper/safe-buffer-code.mts";
 import { z_buffer } from "../helper/z-custom.mts";
+import { map_get_or_put_async } from "@gaubee/util";
+import { onIdea } from "../helper/on-idea.mts";
 export const $RegistryInfo: z.ZodObject<{
   auth: z.ZodUnion<
     [
@@ -119,18 +125,17 @@ export const registry = async (
 
   /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
   const lookupHostname = registryInfo.service.hostname ?? from_hostname;
-  const lookupResult = await dns.promises.lookup(lookupHostname);
   const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {
     ...registryInfo.service,
     origin: registry_origin,
     hostname: from_hostname,
-    lookupHostname,
-    ipAddress: lookupResult.address,
-    family: lookupResult.family as 4 | 6,
+    lookupHostname: lookupHostname,
+    lookup: undefined,
     publicKey,
     peerAddress: address,
   };
+  dnsRecordByHostnameCache.get(from_hostname)?.clearLookupLoop();
   await db.dnsTable.set(from_hostname, dnsRecord);
 
   await db.addressTable.set(address, {
@@ -140,3 +145,114 @@ export const registry = async (
 
   return responseJson(res, dnsRecord, dnsRecordStringify);
 };
+const IPV4_REGEXP =
+  /(\b25[0-5]|\b2[0-4][0-9]|\b[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}/;
+const dnsLookup = async (
+  gateway: GatewayConfig,
+  lookupHostname: string,
+): Promise<DnsRecordLookup> => {
+  if (IPV4_REGEXP.test(lookupHostname)) {
+    return {
+      address: lookupHostname,
+      family: 4,
+      ttl: Infinity,
+    };
+  }
+  const hostname_suffix = gateway.sep + gateway.hostname;
+  if (lookupHostname.endsWith(hostname_suffix)) {
+    return {
+      address: "127.0.0.1",
+      family: 4,
+      ttl: Infinity,
+    };
+  }
+  const lookupResult = await dns.promises.lookup(lookupHostname);
+  return {
+    address: lookupResult.address,
+    family: lookupResult.family,
+    ttl: Date.now() + 600e10,
+  } as DnsRecordLookup;
+};
+
+const dnsRecordByHostnameCache = new Map<
+  string,
+  Readonly<{
+    dnsRecord: DnsRecord;
+    lookup: DnsRecordLookup;
+    clearLookupLoop: () => void;
+  }>
+>();
+const CLEAR_THRESHOLD = 1200;
+const SAFE_CACHE_SIZE = 800;
+export const fastDnsRecordByHostname = async (
+  db: DnsDB,
+  gateway: GatewayConfig,
+  hostname: string,
+) => {
+  const cache = await map_get_or_put_async(
+    dnsRecordByHostnameCache,
+    hostname,
+    async () => {
+      const dnsRecord = await db.dnsTable.get(hostname);
+      if (dnsRecord == null) {
+        throw new Error(`no found dnsRecord by hostname: ${hostname}`);
+      }
+      let currentLookup =
+        dnsRecord.lookup ??
+        (await dnsLookup(gateway, dnsRecord.lookupHostname));
+
+      const updateLookup = async () => {
+        dnsRecord.lookup = currentLookup = await dnsLookup(gateway, hostname);
+        await db.dnsTable.set(hostname, dnsRecord);
+        // 缓存更新了，将数据挪到尾部
+        dnsRecordByHostnameCache.delete(hostname);
+        dnsRecordByHostnameCache.set(hostname, cache);
+      };
+      let ti: number | undefined;
+      const startLookupLoop = async () => {
+        const diffTime = currentLookup.ttl - Date.now();
+        if (diffTime > 0 && Number.isSafeInteger(diffTime)) {
+          ti = setTimeout(() => {
+            ti = undefined;
+            if (useLookupDirty) {
+              useLookupDirty = false;
+              void startLookupLoop();
+            }
+          }, diffTime);
+        } else if (diffTime < 0) {
+          await updateLookup();
+        }
+      };
+
+      const clearLookupLoop = () => {
+        dnsRecordByHostnameCache.delete(hostname);
+        if (ti != null) {
+          clearInterval(ti);
+        }
+      };
+      let useLookupDirty = false;
+      const cache = {
+        dnsRecord,
+        get lookup() {
+          useLookupDirty = true;
+          return currentLookup;
+        },
+        clearLookupLoop,
+      };
+      return cache;
+    },
+  );
+  return cache;
+};
+
+/// 启动清理工具
+onIdea(() => {
+  if (dnsRecordByHostnameCache.size > CLEAR_THRESHOLD) {
+    for (const key of dnsRecordByHostnameCache.keys()) {
+      if (dnsRecordByHostnameCache.size <= SAFE_CACHE_SIZE) {
+        break;
+      }
+      dnsRecordByHostnameCache.delete(key);
+    }
+  }
+});

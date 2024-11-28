@@ -14,6 +14,7 @@ export const doReg = async (args: {
   console.info("using secret:", secret);
   const packet = await registry({
     gateway: gateway,
+    gateway_sep: "-",
     keypair: secret,
     algorithm: "bioforestchain",
     service: {
@@ -38,6 +39,6 @@ if (import_meta_ponyfill(import.meta).main) {
         port: z.number(),
         secret: z.string().optional(),
       })
-      .parse(parseArgs(process.argv.slice(2)))
+      .parse(parseArgs(process.argv.slice(2))),
   );
 }
