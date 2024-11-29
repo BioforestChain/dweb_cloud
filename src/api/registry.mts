@@ -6,7 +6,7 @@ import type { DnsDB } from "./dns-table.mts";
 import { authRequestWithBody } from "../helper/auth-request.mts";
 import {
   type DnsRecord,
-  DnsRecordLookup,
+  type DnsRecordLookup,
   dnsRecordStringify,
 } from "../helper/dns-record.mts";
 import { ResponseError } from "../helper/response-error.mts";
