@@ -13,6 +13,13 @@ npx tsx ./demo/service.demo.mts --gateway=http://gaubee.local:8080/ --secret=qaq
 # 然后就可以打开链接查看 http://7t3pkjces1xki1ppen9dzvdbpinayy8uk-gaubee.local:8080/test
 ```
 
+```bash
+# mdns 网关
+npx tsx ./demo/gateway.demo.mts
+# p2p 示例
+npx tsx ./demo/p2p.demo.mts
+```
+
 注意 ⚠⚠⚠: 本地代理可能会对解析产生影响。如果您是 Windows 用户，可以在代理设置中，将`,*.local`添加到排除条目中
 
 ## How to Use
