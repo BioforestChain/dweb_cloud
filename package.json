@@ -6,12 +6,12 @@
   "license": "MIT",
   "dependencies": {
     "@bfmeta/sign-util": "^1.1.1",
-    "@gaubee/util": "^0.14.4",
     "import-meta-ponyfill": "^3.2.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@std/cli": "npm:@jsr/std__cli@^1.0.6",
+    "@types/dns-packet": "^5.6.5",
     "@types/multicast-dns": "^7.2.4",
     "multicast-dns": "^7.2.5"
   }

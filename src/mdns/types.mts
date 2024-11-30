@@ -13,7 +13,10 @@ export type ServiceType =
   | "script";   // 脚本服务
 
 // 服务元数据接口
-export interface ServiceMetadata {
+export type ServiceMetadata = {
+  [key in string]?: string | unknown // 允许其他自定义元数据
+  // [key in `data_${string}`]: string // 允许其他自定义元数据
+} & {
   // 通用元数据
   version?: string;           // 服务版本
   environment?: string;       // 运行环境
@@ -38,10 +41,17 @@ export interface ServiceMetadata {
   
   // 其他配置
   region?: string;        // 服务区域
-  weight?: string;        // 服务权重
+  weight?: number;        // 服务权重
+  priority?: number;      // 优先级
   tags?: string;          // 服务标签（逗号分隔）
-  [key: string]: string | undefined;  // 允许其他自定义元数据
-}
+
+  // ??
+  type?: string;
+  capabilities?: string;
+  resources?: string;
+  peerId?: string;
+  nodeType?: string;
+} 
 
 // 服务发现接口
 export interface ServiceDiscovery {

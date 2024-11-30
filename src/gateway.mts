@@ -37,7 +37,7 @@ export const startGateway = async (
     ) {
       console.warn("MDNS DISABLED", gateway.hostname);
     } else {
-      const { startMdnsServer } = await import("./mdns.mts");
+      const { startMdnsServer } = await import("./mdns/mod.mts");
       startMdnsServer(gateway.hostname);
     }
   }

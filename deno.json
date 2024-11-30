@@ -11,5 +11,8 @@
     "./client": "./src/client.mts",
     "./gateway-demo": "./src/gateway.demo.mts",
     "./mdns-demo": "./src/mdns.demo.mts"
+  },
+  "imports": {
+    "@gaubee/util": "jsr:@gaubee/util@^0.16.0"
   }
 }
