@@ -1,6 +1,11 @@
 import { pureEvent } from "@gaubee/util";
-import type { Question, SrvAnswer, TxtAnswer } from "dns-packet";
-import { multicastDNS, type mDNS } from "../multicast-dns/index.mts";
+import {
+  multicastDNS,
+  type mDNS,
+  type Question,
+  type SrvAnswer,
+  type TxtAnswer,
+} from "../multicast-dns/index.mts";
 import { Buffer } from "node:buffer";
 import { HealthChecker } from "./health.mts";
 import { getWlanIpv4List } from "./network.mts";

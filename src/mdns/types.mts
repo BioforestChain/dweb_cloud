@@ -74,7 +74,7 @@ export interface ServiceHealth {
 }
 
 // 从multicast-dns导入类型
-import type { ResponsePacket, QueryPacket } from "multicast-dns";
+import type { mDNS } from "../multicast-dns/index.mts";
 
 // 远程信息接口
 export interface RemoteInfo {
@@ -86,8 +86,8 @@ export interface RemoteInfo {
 
 // 事件类型定义
 export interface MdnsEvents {
-  'response': (response: ResponsePacket) => void;                    // 收到响应时触发
-  'query': (query: QueryPacket, rinfo: RemoteInfo) => void;         // 收到查询时触发
+  'response': (response: mDNS.ResponsePacket) => void;                    // 收到响应时触发
+  'query': (query: mDNS.QueryPacket, rinfo: RemoteInfo) => void;         // 收到查询时触发
   'error': (error: Error) => void;                                  // 发生错误时触发
   'ready': () => void;                                              // 服务就绪时触发
   'service-discovery': (service: ServiceDiscovery) => void;         // 发现新服务时触发

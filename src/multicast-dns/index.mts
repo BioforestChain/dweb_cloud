@@ -1,11 +1,14 @@
 import { func_remember } from "@gaubee/util";
-import packet, { type Question, type RecordType } from "dns-packet";
+import packet from "dns-packet";
 import dgram from "node:dgram";
 import events from "node:events";
 import cluster from "node:cluster";
 import os from "node:os";
-import type { mDNS } from "./types.mts";
-export * from "./types.mts";
+import type { mDNS } from "./mdns.d.mts";
+import type { Question, RecordType, DecodedPacket } from "dns-packet";
+import type { Buffer } from "node:buffer";
+export * from "./mdns.d.mts";
+export * from "dns-packet";
 
 const noop = () => {};
 
@@ -41,7 +44,7 @@ export function multicastDNS(opts: mDNS.Options = {}) {
   });
 
   socket.on("message", function (message, rinfo) {
-    let packet_msg: packet.DecodedPacket;
+    let packet_msg: DecodedPacket;
     try {
       packet_msg = packet.decode(message);
     } catch (err) {
@@ -103,7 +106,7 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     function onbind(err: Error | null) {
       if (destroyed) return cb(null);
       if (err) return cb(err);
-      const message = packet.encode(value);
+      const message: Buffer = packet.encode(value);
       socket.send(
         message,
         0,

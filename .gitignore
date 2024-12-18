@@ -23,3 +23,5 @@
 dist/
 node_modules/
 pnpm-lock.yaml
+dns-packet
+ip-codec
