@@ -13,6 +13,6 @@
     "./mdns-demo": "./src/mdns.demo.mts"
   },
   "imports": {
-    "@gaubee/util": "jsr:@gaubee/util@^0.16.0"
+    "@gaubee/util": "jsr:@gaubee/util@^0.19.0"
   }
 }

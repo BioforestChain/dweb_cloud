@@ -1,31 +1,28 @@
-import makeMdns, {
-  type ResponseOutgoingPacket,
-  type QueryPacket,
-  type ResponsePacket,
-} from "multicast-dns";
+import { pureEvent } from "@gaubee/util";
 import type { Question, SrvAnswer, TxtAnswer } from "dns-packet";
-import type {
-  ServiceDiscovery,
-  ServiceHealth,
-  MdnsEvents,
-  RemoteInfo,
-  ServiceType,
-} from "./types.mts";
+import { multicastDNS, type mDNS } from "../multicast-dns/index.mts";
+import { Buffer } from "node:buffer";
 import { HealthChecker } from "./health.mts";
 import { getWlanIpv4List } from "./network.mts";
-import { pureEvent } from "@gaubee/util";
-import { AnyTxtRecord, SrvRecord } from "node:dns";
-import { Buffer } from "node:buffer";
+import type {
+  RemoteInfo,
+  ServiceDiscovery,
+  ServiceHealth,
+  ServiceType,
+} from "./types.mts";
 
 export class MdnsServer {
-  private mdns = makeMdns();
+  private mdns = multicastDNS();
   private services = new Map<string, ServiceDiscovery>();
   private healthStatus = new Map<string, ServiceHealth>();
   private checkInterval: number | null = null;
   private suffix_host;
   private ipv4List;
-  readonly onResponse = pureEvent<ResponsePacket>(); // 收到响应时触发
-  readonly onQuery = pureEvent<{ query: QueryPacket; rinfo: RemoteInfo }>(); // 收到查询时触发
+  readonly onResponse = pureEvent<mDNS.ResponsePacket>(); // 收到响应时触发
+  readonly onQuery = pureEvent<{
+    query: mDNS.QueryPacket;
+    rinfo: RemoteInfo;
+  }>(); // 收到查询时触发
   readonly onError = pureEvent<Error>(); // 发生错误时触发
   readonly onReady = pureEvent<void>(); // 服务就绪时触发
   readonly onServiceDiscovery = pureEvent<ServiceDiscovery>(); // 发现新服务时触发
@@ -46,18 +43,21 @@ export class MdnsServer {
   }
 
   private setupMdnsListeners() {
-    this.mdns.on("response", (response: ResponsePacket, rinfo: RemoteInfo) => {
-      this.onResponse.emit(response);
-      this.handleResponse(response, rinfo);
-    });
+    this.mdns.on(
+      "response",
+      (response: mDNS.ResponsePacket, rinfo: RemoteInfo) => {
+        this.onResponse.emit(response);
+        this.handleResponse(response, rinfo);
+      },
+    );
 
-    this.mdns.on("query", (query: QueryPacket, rinfo: RemoteInfo) => {
+    this.mdns.on("query", (query: mDNS.QueryPacket, rinfo: RemoteInfo) => {
       this.onQuery.emit({ query, rinfo });
       this.handleQuery(query);
     });
   }
 
-  private handleResponse(response: ResponsePacket, _rinfo: RemoteInfo) {
+  private handleResponse(response: mDNS.ResponsePacket, _rinfo: RemoteInfo) {
     if (!response.answers) return;
     console.log("收到mDNS响应:", response.answers);
 
@@ -176,9 +176,9 @@ export class MdnsServer {
     }
   }
 
-  private handleQuery(query: QueryPacket) {
+  private handleQuery(query: mDNS.QueryPacket) {
     const questions = query.questions || [];
-    const responses: ResponseOutgoingPacket = { answers: [] };
+    const responses: mDNS.ResponseOutgoingPacket = { answers: [] };
 
     for (const question of questions) {
       const service = this.findServiceByQuestion(question);
@@ -210,7 +210,7 @@ export class MdnsServer {
 
   private createResponseAnswers(
     service: ServiceDiscovery,
-  ): ResponseOutgoingPacket["answers"] {
+  ): mDNS.ResponseOutgoingPacket["answers"] {
     const serviceName = `_${service.serviceName}._${service.protocol}.local`;
     const instanceName = `${
       service.metadata.peerId || service.serviceName
@@ -253,14 +253,14 @@ export class MdnsServer {
   }
   private createResponsePacket(
     service: ServiceDiscovery,
-  ): Pick<ResponseOutgoingPacket, "answers"> {
+  ): Pick<mDNS.ResponseOutgoingPacket, "answers"> {
     return {
       answers: this.createResponseAnswers(service),
     };
   }
 
   // 发送 mDNS 查询
-  public query(query: QueryPacket) {
+  public query(query: mDNS.QueryPacket) {
     console.log("发送 mDNS 查询:", query);
     this.mdns.query(query);
   }

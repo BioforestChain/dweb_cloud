@@ -1,19 +1,18 @@
 {
   "version": "4",
   "specifiers": {
-    "jsr:@gaubee/util@0.16": "0.16.0",
+    "jsr:@gaubee/util@0.19": "0.19.0",
     "npm:@bfmeta/sign-util@^1.1.1": "1.1.1",
-    "npm:@jsr/std__cli@^1.0.6": "1.0.6",
+    "npm:@jsr/gaubee__util@0.19": "0.19.0",
+    "npm:@jsr/std__cli@^1.0.6": "1.0.8",
     "npm:@types/dns-packet@^5.6.5": "5.6.5",
-    "npm:@types/multicast-dns@^7.2.4": "7.2.4",
     "npm:dns-packet@^5.6.1": "5.6.1",
     "npm:import-meta-ponyfill@^3.2.1": "3.2.1",
-    "npm:multicast-dns@^7.2.5": "7.2.5",
-    "npm:zod@^3.23.8": "3.23.8"
+    "npm:zod@^3.23.8": "3.24.1"
   },
   "jsr": {
-    "@gaubee/util@0.16.0": {
-      "integrity": "1520f61f4bbdc63e0a361d1f12ff38d7d2112bb371702083e5fe7cbdcd6f3092"
+    "@gaubee/util@0.19.0": {
+      "integrity": "4f1fbf07de54906feac81b026d8d14a6869ed16d16be128511e6536205f2ea87"
     }
   },
   "npm": {
@@ -23,8 +22,11 @@
         "tslib"
       ]
     },
-    "@jsr/std__cli@1.0.6": {
-      "integrity": "sha512-aWfDn9Hsr8wGI1D0nX4o1ADCt93gerYy3bU7zXrlymxD1HXTWj3EfgOq2/cKmpcTmR/PWBensX4AnenprWb9cA=="
+    "@jsr/gaubee__util@0.19.0": {
+      "integrity": "sha512-2b5SD1XC8nuPyN0BpduTJHckNdTqxT5WHVlMYs56pGsMDPmQU6ecjY4uBBptRtGJK7PPYR1H7nuXXmCOnTFirQ=="
+    },
+    "@jsr/std__cli@1.0.8": {
+      "integrity": "sha512-INuqfQ6ZJQe+WnSX8kphC9/G7TN5ZXvqtdcw1LmoowpUQwQnh5w+kywUhbC+FHXwSgNDyMi/h2w0px464kdstg=="
     },
     "@leichtgewicht/ip-codec@2.0.5": {
       "integrity": "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="
@@ -32,13 +34,6 @@
     "@types/dns-packet@5.6.5": {
       "integrity": "sha512-qXOC7XLOEe43ehtWJCMnQXvgcIpv6rPmQ1jXT98Ad8A3TB1Ue50jsCbSSSyuazScEuZ/Q026vHbrOTVkmwA+7Q==",
       "dependencies": [
-        "@types/node"
-      ]
-    },
-    "@types/multicast-dns@7.2.4": {
-      "integrity": "sha512-ib5K4cIDR4Ro5SR3Sx/LROkMDa0BHz0OPaCBL/OSPDsAXEGZ3/KQeS6poBKYVN7BfjXDL9lWNwzyHVgt/wkyCw==",
-      "dependencies": [
-        "@types/dns-packet",
         "@types/node"
       ]
     },
@@ -57,38 +52,28 @@
     "import-meta-ponyfill@3.2.1": {
       "integrity": "sha512-2dwCESkA/LyTF/YMWRR5v7DWfzqFqodiUTmgu6MjhkpO0rFAerPgdUtvVc0t7rsezL55nK1eqlTILW9WiLvDEQ=="
     },
-    "multicast-dns@7.2.5": {
-      "integrity": "sha512-2eznPJP8z2BFLX50tf0LuODrpINqP1RVIm/CObbTcBRITQgmC/TjcREF1NeTBzIcR5XO/ukWo+YHOjBbFwIupg==",
-      "dependencies": [
-        "dns-packet",
-        "thunky"
-      ]
-    },
-    "thunky@1.1.0": {
-      "integrity": "sha512-eHY7nBftgThBqOyHGVN+l8gF0BucP09fMo0oO/Lb0w1OF80dJv+lDVpXG60WMQvkcxAkNybKsrEIE3ZtKGmPrA=="
-    },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
     },
     "undici-types@6.19.8": {
       "integrity": "sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw=="
     },
-    "zod@3.23.8": {
-      "integrity": "sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g=="
+    "zod@3.24.1": {
+      "integrity": "sha512-muH7gBL9sI1nciMZV67X5fTKKBLtwpZ5VBp1vsOQzj1MhrBZ4wlVCm3gedKZWLp0Oyel8sIGfeiz54Su+OVT+A=="
     }
   },
   "workspace": {
     "dependencies": [
-      "jsr:@gaubee/util@0.16"
+      "jsr:@gaubee/util@0.19"
     ],
     "packageJson": {
       "dependencies": [
         "npm:@bfmeta/sign-util@^1.1.1",
+        "npm:@jsr/gaubee__util@0.19",
         "npm:@jsr/std__cli@^1.0.6",
         "npm:@types/dns-packet@^5.6.5",
-        "npm:@types/multicast-dns@^7.2.4",
+        "npm:dns-packet@^5.6.1",
         "npm:import-meta-ponyfill@^3.2.1",
-        "npm:multicast-dns@^7.2.5",
         "npm:zod@^3.23.8"
       ]
     }

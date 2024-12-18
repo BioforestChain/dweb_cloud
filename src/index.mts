@@ -1,4 +1,4 @@
-import "@gaubee/util/global";
+import { map_get_or_put_async } from "@gaubee/util";
 import http from "node:http";
 import { fileURLToPath } from "node:url";
 import worker_threads from "node:worker_threads";
@@ -21,7 +21,7 @@ server.addListener("request", async (req, res) => {
     return;
   }
   console.log("vmWokers.get(host)", vmWokers.get(host));
-  const vmWorker = await vmWokers.getOrPutAsync(host, () => {
+  const vmWorker = await map_get_or_put_async(vmWokers, host, () => {
     console.log("new worker", host);
     const worker = new worker_threads.Worker(resolveTo("./worker.mjs"), {
       workerData: {
@@ -55,10 +55,7 @@ server.addListener("request", async (req, res) => {
 
 const vmWokers = new Map<string, VmWorker>();
 class VmWorker {
-  constructor(
-    readonly worker: worker_threads.Worker,
-    readonly port: number,
-  ) {}
+  constructor(readonly worker: worker_threads.Worker, readonly port: number) {}
 }
 
 server.listen(9000, () => {
