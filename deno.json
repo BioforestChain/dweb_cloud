@@ -1,6 +1,6 @@
 {
   "name": "@dweb/cloud",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "tasks": {
     "gateway": "npx tsx ./src/gateway.demo.mts",
     "mdns": "npx tsx ./src/mdns.demo.mts"
@@ -8,6 +8,7 @@
   "exports": {
     "./gateway": "./src/gateway.mts",
     "./helper": "./src/helper/mod.mts",
+    "./helper/buffer": "./src/helper/safe-buffer-code.mts",
     "./client": "./src/client.mts",
     "./gateway-demo": "./src/gateway.demo.mts",
     "./mdns-demo": "./src/mdns.demo.mts"

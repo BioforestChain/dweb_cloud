@@ -5,7 +5,7 @@ import events from "node:events";
 import cluster from "node:cluster";
 import os from "node:os";
 import type { mDNS } from "./mdns.d.mts";
-import type { Question, RecordType, DecodedPacket } from "dns-packet";
+import type { DecodedPacket, Question, RecordType } from "dns-packet";
 import type { Buffer } from "node:buffer";
 export * from "./mdns.d.mts";
 export * from "dns-packet";
@@ -16,8 +16,8 @@ export function multicastDNS(opts: mDNS.Options = {}) {
   const that = new events.EventEmitter();
   let port = typeof opts.port === "number" ? opts.port : 5353;
   const type = opts.type || "udp4";
-  const ip =
-    opts.ip || opts.host || (type === "udp4" ? "224.0.0.251" : undefined);
+  const ip = opts.ip || opts.host ||
+    (type === "udp4" ? "224.0.0.251" : undefined);
   const me: mDNS.RemoteInfoOutgoing & { host?: string } = {
     address: ip,
     port: port,
@@ -30,17 +30,16 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     throw new Error("For IPv6 multicast you must specify `ip` and `interface`");
   }
 
-  const socket =
-    opts.socket ||
+  const socket = opts.socket ||
     dgram.createSocket({
       type: type,
       reuseAddr: opts.reuseAddr !== false,
     });
 
   socket.on("error", function (err: Error & { code?: string }) {
-    if (err.code === "EACCES" || err.code === "EADDRINUSE")
+    if (err.code === "EACCES" || err.code === "EADDRINUSE") {
       that.emit("error", err);
-    else that.emit("warning", err);
+    } else that.emit("warning", err);
   });
 
   socket.on("message", function (message, rinfo) {
@@ -55,8 +54,9 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     that.emit("packet", packet_msg, rinfo);
 
     if (packet_msg.type === "query") that.emit("query", packet_msg, rinfo);
-    if (packet_msg.type === "response")
+    if (packet_msg.type === "response") {
       that.emit("response", packet_msg, rinfo);
+    }
   });
 
   socket.on("listening", function () {
@@ -132,15 +132,18 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     rinfo?: mDNS.RemoteInfoOutgoing | mDNS.QueryCallback,
     cb?: mDNS.QueryCallback,
   ) {
-    if (typeof type === "function")
+    if (typeof type === "function") {
       return _query(q, undefined, undefined, type);
-    if (typeof type === "object" && type && type.port)
+    }
+    if (typeof type === "object" && type && type.port) {
       return _query(q, undefined, type, rinfo as mDNS.QueryCallback);
+    }
     if (typeof rinfo === "function") return _query(q, type, undefined, rinfo);
     if (!cb) cb = noop;
 
-    if (typeof q === "string")
+    if (typeof q === "string") {
       q = [{ name: q, type: (type as RecordType) || "ANY" }];
+    }
     if (Array.isArray(q)) q = { type: "query", questions: q };
 
     q.type = "query";
@@ -217,8 +220,9 @@ function defaultInterface() {
     for (let j = 0; j < net.length; j++) {
       const iface = net[j];
       if (isIPv4(iface.family) && !iface.internal) {
-        if (os.platform() === "darwin" && names[i] === "en0")
+        if (os.platform() === "darwin" && names[i] === "en0") {
           return iface.address;
+        }
         return "0.0.0.0";
       }
     }
