@@ -73,6 +73,31 @@ export const startGateway = async (
             forwarded_res.pipe(res);
           },
         );
+        forwarded_req.on("error", (err) => {
+          // 在向客户端发送任何响应之前，检查头是否已经发送
+          // 这是一个重要的边界情况：如果错误发生在数据流传输过程中，头可能已经发送出去了
+          if (res.headersSent) {
+            // 头已发送，我们无法再更改状态码。只能粗暴地中断连接。
+            console.error("[GATEWAY] Error after headers sent:", req.url, err);
+            res.destroy(); // 销毁套接字
+            return;
+          }
+          console.error("[GATEWAY]", hostname, req.url, err);
+          // 向上游客户端返回 502 Bad Gateway
+          res.statusCode = 502;
+          res.setHeader("Content-Type", "application/json");
+
+          // 提供一个对客户端友好的、结构化的错误信息
+          const errorResponse = {
+            error: "Bad Gateway",
+            message:
+              "The upstream server is unreachable or returned an invalid response.",
+            // 提供远程节点信息
+            remoteDnsRecord: dnsRecord,
+          };
+
+          res.end(JSON.stringify(errorResponse));
+        });
         req.pipe(forwarded_req);
         return;
       }
@@ -117,6 +142,10 @@ export const startGateway = async (
     server = http.createServer(onRequest);
   }
   const job = Promise.withResolvers<AddressInfo>();
+  server.on("error", (err) => {
+    job.reject(err);
+    console.error("Dweb Gateway Error:", err);
+  });
   server.listen({ port: gateway.port }, () => {
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);

@@ -5,6 +5,7 @@ import { Buffer } from "node:buffer";
 import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
 import { bfmetaSignUtil } from "./bfmeta-sign-util.mts";
 import { ResponseError } from "./response-error.mts";
+import { randomUUID } from "node:crypto";
 
 export const signRequest = async (
   keypair: Keypair,
@@ -17,7 +18,7 @@ export const signRequest = async (
   const { hostname: to_hostname, pathname, search } = api_url;
   headers["x-dweb-cloud-host"] = to_hostname;
   headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${origin_hostname}`;
-  const noise = crypto.randomUUID();
+  const noise = randomUUID();
   headers["x-dweb-cloud-noise"] = `${noise}`;
   const header = Buffer.from(
     [
@@ -30,11 +31,11 @@ export const signRequest = async (
       `NOISE ${noise}`,
     ].join("\n") + "\n",
   );
-  const signMsg = body ? Buffer.concat([header, body]) : header;
+  const signMsg = body ? Buffer.concat([header, body] as Uint8Array[]) : header;
 
   const signature = await bfmetaSignUtil.detachedSign(
-    signMsg,
-    keypair.privateKey,
+    signMsg as Uint8Array,
+    keypair.privateKey as Uint8Array,
   );
   headers["x-dweb-cloud-algorithm"] = "bioforestchain";
   headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
@@ -50,7 +51,7 @@ export const verifyRequest = (
   req_body?: Uint8Array | (() => Promise<Uint8Array | undefined>),
 ): {
   verify: () => Promise<boolean>;
-  publicKey: Buffer;
+  publicKey: Buffer<ArrayBuffer>;
   from_hostname: string;
   to_hostname: string;
 } => {
@@ -95,8 +96,14 @@ export const verifyRequest = (
     if (typeof req_body === "function") {
       req_body = await req_body();
     }
-    const signMsg = req_body ? Buffer.concat([header, req_body]) : header;
-    return bfmetaSignUtil.detachedVeriy(signMsg, signature, publicKey);
+    const signMsg = req_body
+      ? Buffer.concat([header, req_body] as Uint8Array[])
+      : header;
+    return bfmetaSignUtil.detachedVeriy(
+      signMsg as Uint8Array,
+      signature as Uint8Array,
+      publicKey as Uint8Array,
+    );
   };
   return {
     verify,
@@ -136,14 +143,16 @@ export const authRequestWithBody = async (
     req.url ?? "/",
     req_method,
     new Headers(req.headers as Record<string, string>),
-    rawBody,
+    rawBody as Uint8Array,
   );
   if (false === (await verify())) {
     throw new ResponseError(401, "fail to veriy").end(res);
   }
   return {
     ...info,
-    address: await bfmetaSignUtil.getAddressFromPublicKey(info.publicKey),
+    address: await bfmetaSignUtil.getAddressFromPublicKey(
+      info.publicKey as Uint8Array,
+    ),
     rawBody,
   };
 };

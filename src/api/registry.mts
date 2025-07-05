@@ -103,7 +103,10 @@ export const registry = async (
     ).end(res);
   }
   /// 公钥要一致
-  if (false === publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey))) {
+  if (
+    false ===
+    publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey) as Uint8Array)
+  ) {
     throw new ResponseError(403, `fail to registry, publicKey no match.`).end(
       res,
     );
@@ -132,7 +135,7 @@ export const registry = async (
     hostname: from_hostname,
     lookupHostname: lookupHostname,
     lookup: undefined,
-    publicKey,
+    publicKey: publicKey,
     peerAddress: address,
   };
   dnsRecordByHostnameCache.get(from_hostname)?.clearLookupLoop();

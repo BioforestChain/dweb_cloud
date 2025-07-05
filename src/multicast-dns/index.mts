@@ -106,7 +106,7 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     function onbind(err: Error | null) {
       if (destroyed) return cb(null);
       if (err) return cb(err);
-      const message: Buffer = packet.encode(value);
+      const message = packet.encode(value) as Uint8Array;
       socket.send(
         message,
         0,
