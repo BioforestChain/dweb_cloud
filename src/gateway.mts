@@ -6,6 +6,7 @@ import { z } from "zod";
 import type { DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { fastDnsRecordByHostname, registry } from "./api/registry.mts";
+import { dnsRecordStringify } from "./helper/dns-record.mts";
 export * from "./api/dns-table.mts";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
@@ -93,7 +94,7 @@ export const startGateway = async (
             message:
               "The upstream server is unreachable or returned an invalid response.",
             // 提供远程节点信息
-            remoteDnsRecord: dnsRecord,
+            details: { remoteDnsRecordJson: dnsRecordStringify(dnsRecord) },
           };
 
           res.end(JSON.stringify(errorResponse));
