@@ -62,7 +62,7 @@ export const registry = async (
   const { hostname: gateway_hostname } = gateway_url;
 
   const address = await bfmetaSignUtil.getAddressFromPublicKey(
-    keypair.publicKey as Uint8Array,
+    keypair.publicKey,
   );
   const my_hostname = (
     address +
@@ -89,7 +89,7 @@ export const registry = async (
     my_hostname,
     api_url,
     method,
-    body as Uint8Array,
+    body,
   );
   const fetchRegistry = (customFetch = fetch) =>
     customFetch(api_url, {
@@ -127,12 +127,10 @@ export const createBioforestChainKeypairBySecretKeyString = async (
   bfmetaSignUtil.createKeypairBySecretKeyString;
   const keypair = await bfmetaSignUtil.createKeypair(secret);
   return {
-    privateKey: keypair.secretKey as Buffer,
-    publicKey: keypair.publicKey as Buffer,
+    privateKey: keypair.secretKey,
+    publicKey: keypair.publicKey,
     get address() {
-      return bfmetaSignUtil.getAddressFromPublicKey(
-        keypair.publicKey as unknown as Uint8Array,
-      );
+      return bfmetaSignUtil.getAddressFromPublicKey(keypair.publicKey);
     },
   };
 };
@@ -140,7 +138,7 @@ export const createBioforestChainKeypairBySecretKeyString = async (
 export const createBioforestChainAddressByPublicKey = (
   publicKey: Buffer,
 ): Promise<string> => {
-  return bfmetaSignUtil.getAddressFromPublicKey(publicKey as Uint8Array);
+  return bfmetaSignUtil.getAddressFromPublicKey(publicKey);
 };
 
 export const queryDnsRecord: (

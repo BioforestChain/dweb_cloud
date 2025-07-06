@@ -31,15 +31,15 @@ export const signRequest = async (
       `NOISE ${noise}`,
     ].join("\n") + "\n",
   );
-  const signMsg = body ? Buffer.concat([header, body] as Uint8Array[]) : header;
+  const signMsg = body ? Buffer.concat([header, body]) : header;
 
   const signature = await bfmetaSignUtil.detachedSign(
-    signMsg as Uint8Array,
-    keypair.privateKey as Uint8Array,
+    signMsg,
+    keypair.privateKey,
   );
   headers["x-dweb-cloud-algorithm"] = "bioforestchain";
   headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
-  headers["x-dweb-cloud-signature"] = toSafeBuffer(signature as Buffer);
+  headers["x-dweb-cloud-signature"] = toSafeBuffer(signature);
 
   return headers;
 };
@@ -51,7 +51,7 @@ export const verifyRequest = (
   req_body?: Uint8Array | (() => Promise<Uint8Array | undefined>),
 ): {
   verify: () => Promise<boolean>;
-  publicKey: Buffer<ArrayBuffer>;
+  publicKey: Buffer;
   from_hostname: string;
   to_hostname: string;
 } => {
@@ -96,14 +96,8 @@ export const verifyRequest = (
     if (typeof req_body === "function") {
       req_body = await req_body();
     }
-    const signMsg = req_body
-      ? Buffer.concat([header, req_body] as Uint8Array[])
-      : header;
-    return bfmetaSignUtil.detachedVeriy(
-      signMsg as Uint8Array,
-      signature as Uint8Array,
-      publicKey as Uint8Array,
-    );
+    const signMsg = req_body ? Buffer.concat([header, req_body]) : header;
+    return bfmetaSignUtil.detachedVerify(signMsg, signature, publicKey);
   };
   return {
     verify,
@@ -143,16 +137,14 @@ export const authRequestWithBody = async (
     req.url ?? "/",
     req_method,
     new Headers(req.headers as Record<string, string>),
-    rawBody as Uint8Array,
+    rawBody,
   );
   if (false === (await verify())) {
     throw new ResponseError(401, "fail to veriy").end(res);
   }
   return {
     ...info,
-    address: await bfmetaSignUtil.getAddressFromPublicKey(
-      info.publicKey as Uint8Array,
-    ),
+    address: await bfmetaSignUtil.getAddressFromPublicKey(info.publicKey),
     rawBody,
   };
 };

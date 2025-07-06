@@ -16,8 +16,8 @@ export function multicastDNS(opts: mDNS.Options = {}) {
   const that = new events.EventEmitter();
   let port = typeof opts.port === "number" ? opts.port : 5353;
   const type = opts.type || "udp4";
-  const ip = opts.ip || opts.host ||
-    (type === "udp4" ? "224.0.0.251" : undefined);
+  const ip =
+    opts.ip || opts.host || (type === "udp4" ? "224.0.0.251" : undefined);
   const me: mDNS.RemoteInfoOutgoing & { host?: string } = {
     address: ip,
     port: port,
@@ -30,7 +30,8 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     throw new Error("For IPv6 multicast you must specify `ip` and `interface`");
   }
 
-  const socket = opts.socket ||
+  const socket =
+    opts.socket ||
     dgram.createSocket({
       type: type,
       reuseAddr: opts.reuseAddr !== false,
@@ -106,7 +107,7 @@ export function multicastDNS(opts: mDNS.Options = {}) {
     function onbind(err: Error | null) {
       if (destroyed) return cb(null);
       if (err) return cb(err);
-      const message = packet.encode(value) as Uint8Array;
+      const message = packet.encode(value);
       socket.send(
         message,
         0,

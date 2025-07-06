@@ -103,10 +103,7 @@ export const registry = async (
     ).end(res);
   }
   /// 公钥要一致
-  if (
-    false ===
-    publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey) as Uint8Array)
-  ) {
+  if (false === publicKey.equals(safeBufferFrom(registryInfo.auth.publicKey))) {
     throw new ResponseError(403, `fail to registry, publicKey no match.`).end(
       res,
     );

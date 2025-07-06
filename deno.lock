@@ -5,7 +5,7 @@
     "jsr:@std/assert@^1.0.13": "1.0.13",
     "jsr:@std/cli@^1.0.20": "1.0.20",
     "jsr:@std/internal@^1.0.6": "1.0.9",
-    "npm:@bfmeta/sign-util@^1.2.2": "1.2.2",
+    "npm:@bfmeta/sign-util@^2.0.1": "2.0.1",
     "npm:@gaubee/util@0.34": "0.34.0",
     "npm:@types/dns-packet@^5.6.5": "5.6.5",
     "npm:@types/node@*": "22.15.15",
@@ -32,8 +32,8 @@
     }
   },
   "npm": {
-    "@bfmeta/sign-util@1.2.2": {
-      "integrity": "sha512-9islb4gU9XvQflrDDZ0rvVrEK38fqI691rt0b2+kYxSYUTZvBM8wni7CqrPqJb0Sa23rKiro5/l74FcK6Ul0Tg==",
+    "@bfmeta/sign-util@2.0.1": {
+      "integrity": "sha512-P0UMDlRwxO0dlUfkfFrjF40u7KUDUT7OwqIZUySGBdE9360m8bEhH+DxRjz/09hTcFL16ISuYZcwJU0eYk5I7g==",
       "dependencies": [
         "tslib"
       ]
@@ -104,7 +104,7 @@
     ],
     "packageJson": {
       "dependencies": [
-        "npm:@bfmeta/sign-util@^1.2.2",
+        "npm:@bfmeta/sign-util@^2.0.1",
         "npm:@gaubee/util@0.34",
         "npm:@types/dns-packet@^5.6.5",
         "npm:@types/node@^24.0.10",
