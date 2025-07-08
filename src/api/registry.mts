@@ -124,7 +124,12 @@ export const registry = async (
   }
 
   /// 这里的自定义 hostname 只是用来 dns lookup 查询ip，并不作为记录值
-  const lookupHostname = registryInfo.service.hostname ?? from_hostname;
+  let lookupHostname = registryInfo.service.hostname ?? from_hostname;
+  if (/^https?:\/\//.test(lookupHostname)) {
+    lookupHostname = new URL(lookupHostname).hostname;
+  } else if (/[\/:]/.test(lookupHostname)) {
+    lookupHostname = lookupHostname.split(/[\/:]/)[0];
+  }
   const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {
     ...registryInfo.service,
