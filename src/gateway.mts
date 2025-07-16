@@ -47,6 +47,28 @@ export const startGateway = async (
     typeof http.IncomingMessage,
     typeof http.ServerResponse
   > = async (req, res) => {
+    if (req.method === "OPTIONS") {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+
+      // 设置允许的 HTTP 方法
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS",
+      );
+
+      // 设置允许的请求头
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization, X-Dweb-PublicKey, X-Dweb-Timestamp, X-Dweb-Signature, X-Dweb-Cloud-Host, X-Dweb-Cloud-Origin, X-Dweb-Cloud-Noise, X-Dweb-Cloud-Algorithm, X-Dweb-Cloud-Public-Key, X-Dweb-Cloud-Signature,",
+      );
+
+      // 如果需要，允许携带凭证（如 cookie）
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+
+      res.statusCode = 204;
+      res.end();
+      return;
+    }
     try {
       /// 网关转发
       const hostname = (
