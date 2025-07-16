@@ -7,9 +7,11 @@ import type { DnsDB } from "./api/dns-table.mts";
 import { query } from "./api/query.mts";
 import { fastDnsRecordByHostname, registry } from "./api/registry.mts";
 import { dnsRecordStringify } from "./helper/dns-record.mts";
+import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 export * from "./api/dns-table.mts";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
+  signUtil: BFMetaSignUtil,
   db: DnsDB,
   options: {
     host: string;
@@ -131,7 +133,7 @@ export const startGateway = async (
         "https://parse.url",
       );
       if (pathname === "/registry" && req.method === "POST") {
-        return await registry(db, gateway, req, res);
+        return await registry(signUtil, db, gateway, req, res);
       }
       if (pathname === "/query" && req.method === "GET") {
         return await query(db, searchParams, req, res);

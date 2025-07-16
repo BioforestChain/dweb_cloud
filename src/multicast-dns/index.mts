@@ -6,7 +6,6 @@ import cluster from "node:cluster";
 import os from "node:os";
 import type { mDNS } from "./mdns.d.mts";
 import type { DecodedPacket, Question, RecordType } from "dns-packet";
-import type { Buffer } from "node:buffer";
 export * from "./mdns.d.mts";
 export * from "dns-packet";
 

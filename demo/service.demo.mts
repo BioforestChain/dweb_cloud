@@ -6,6 +6,7 @@ import process from "node:process";
 import { setupVerbose } from "../src/helper/logger.mts";
 import { z } from "zod";
 import { doReg } from "./reg.demo.mts";
+import { bfmetaSignUtil } from "@dweb/cloud/helper";
 
 export const main = async () => {
   const args = parseArgs(process.argv.slice(2));
@@ -27,7 +28,7 @@ export const main = async () => {
 
   const port = await serverJob.promise;
 
-  await doReg({
+  await doReg(bfmetaSignUtil, {
     ...args,
     gateway,
     port,

@@ -2,6 +2,7 @@ import dns from "node:dns";
 import type http from "node:http";
 import z from "zod";
 import type { DnsDB } from "./dns-table.mts";
+import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 
 import { authRequestWithBody } from "../helper/auth-request.mts";
 import {
@@ -79,13 +80,14 @@ export type GatewayConfig = {
   port: number;
 };
 export const registry = async (
+  signUtil: BFMetaSignUtil,
   db: DnsDB,
   gateway: GatewayConfig,
   req: http.IncomingMessage,
   res: http.ServerResponse,
 ) => {
   const { rawBody, from_hostname, publicKey, address } =
-    await authRequestWithBody(req, res);
+    await authRequestWithBody(signUtil, req, res);
 
   const registryInfo = $RegistryInfo.parse(
     JSON.parse(z_buffer.parse(rawBody).toString("utf-8")),

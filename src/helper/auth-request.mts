@@ -3,11 +3,12 @@ import z from "zod";
 import { getNodeReqBody } from "./income-message.mts";
 import { Buffer } from "node:buffer";
 import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
-import { bfmetaSignUtil } from "./bfmeta-sign-util.mts";
 import { ResponseError } from "./response-error.mts";
 import { randomUUID } from "node:crypto";
+import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 
 export const signRequest = async (
+  signUtil: BFMetaSignUtil,
   keypair: Keypair,
   origin_hostname: string,
   api_url: URL,
@@ -33,10 +34,7 @@ export const signRequest = async (
   );
   const signMsg = body ? Buffer.concat([header, body]) : header;
 
-  const signature = await bfmetaSignUtil.detachedSign(
-    signMsg,
-    keypair.privateKey,
-  );
+  const signature = await signUtil.detachedSign(signMsg, keypair.privateKey);
   headers["x-dweb-cloud-algorithm"] = "bioforestchain";
   headers["x-dweb-cloud-public-key"] = toSafeBuffer(keypair.publicKey);
   headers["x-dweb-cloud-signature"] = toSafeBuffer(signature);
@@ -45,6 +43,7 @@ export const signRequest = async (
 };
 
 export const verifyRequest = (
+  signUtil: BFMetaSignUtil,
   req_url: string,
   req_method: string,
   req_headers: Headers,
@@ -97,7 +96,7 @@ export const verifyRequest = (
       req_body = await req_body();
     }
     const signMsg = req_body ? Buffer.concat([header, req_body]) : header;
-    return bfmetaSignUtil.detachedVerify(signMsg, signature, publicKey);
+    return signUtil.detachedVerify(signMsg, signature, publicKey);
   };
   return {
     verify,
@@ -113,6 +112,7 @@ export type Keypair = {
 };
 
 export const authRequestWithBody = async (
+  signUtil: BFMetaSignUtil,
   req: http.IncomingMessage,
   res: http.ServerResponse,
 ): Promise<{
@@ -134,6 +134,7 @@ export const authRequestWithBody = async (
   const req_method = req.method ?? "GET";
   const rawBody = await getNodeReqBody(req);
   const { verify, ...info } = verifyRequest(
+    signUtil,
     req.url ?? "/",
     req_method,
     new Headers(req.headers as Record<string, string>),
@@ -144,7 +145,7 @@ export const authRequestWithBody = async (
   }
   return {
     ...info,
-    address: await bfmetaSignUtil.getAddressFromPublicKey(info.publicKey),
+    address: await signUtil.getAddressFromPublicKey(info.publicKey),
     rawBody,
   };
 };

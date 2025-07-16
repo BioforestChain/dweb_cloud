@@ -4,15 +4,20 @@ import { setupVerbose } from "../src/helper/logger.mts";
 import process from "node:process";
 import { registry } from "../src/client.mts";
 import { z } from "zod";
+import type { BFMetaSignUtil } from "@bfmeta/sign-util";
+import { bfmetaSignUtil } from "@dweb/cloud/helper";
 
-export const doReg = async (args: {
-  gateway: string;
-  port: number;
-  secret?: string;
-}) => {
+export const doReg = async (
+  signUtil: BFMetaSignUtil,
+  args: {
+    gateway: string;
+    port: number;
+    secret?: string;
+  },
+) => {
   const { gateway, port, secret = Math.random().toString(36).slice(2) } = args;
   console.info("using secret:", secret);
-  const packet = await registry({
+  const packet = await registry(signUtil, {
     gateway: gateway,
     gateway_sep: "-",
     keypair: secret,
@@ -33,6 +38,7 @@ export const doReg = async (args: {
 if (import_meta_ponyfill(import.meta).main) {
   setupVerbose();
   await doReg(
+    bfmetaSignUtil,
     z
       .object({
         gateway: z.string(),
