@@ -4,7 +4,6 @@ import { getNodeReqBody } from "./income-message.mts";
 import { Buffer } from "node:buffer";
 import { safeBufferFrom, toSafeBuffer } from "./safe-buffer-code.mts";
 import { ResponseError } from "./response-error.mts";
-import { randomUUID } from "node:crypto";
 import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 
 export const signRequest = async (
@@ -19,7 +18,7 @@ export const signRequest = async (
   const { hostname: to_hostname, pathname, search } = api_url;
   headers["x-dweb-cloud-host"] = to_hostname;
   headers["x-dweb-cloud-origin"] = `${api_url.protocol}//${origin_hostname}`;
-  const noise = randomUUID();
+  const noise = crypto.randomUUID();
   headers["x-dweb-cloud-noise"] = `${noise}`;
   const header = Buffer.from(
     [
