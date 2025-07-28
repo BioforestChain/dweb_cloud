@@ -1,6 +1,6 @@
 {
   "name": "@dweb/cloud",
-  "version": "1.0.1",
+  "version": "1.2.3",
   "tasks": {
     "gateway": "npx tsx ./src/gateway.demo.mts",
     "mdns": "npx tsx ./src/mdns.demo.mts"

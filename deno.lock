@@ -12,6 +12,7 @@
     "npm:@types/node@^24.0.10": "24.0.10",
     "npm:dns-packet@^5.6.1": "5.6.1",
     "npm:import-meta-ponyfill@^3.2.2": "3.2.2",
+    "npm:ts-pattern@^5.8.0": "5.8.0",
     "npm:zod@^3.25.74": "3.25.74"
   },
   "jsr": {
@@ -80,6 +81,9 @@
     "import-meta-ponyfill@3.2.2": {
       "integrity": "sha512-R233jC/k6Ozunw3B3jcJaDVkoHXQRtQQxP8X6gGE2b2OxKGYiTBAHv/lTnafg62o2JbSLg7uwCu8PthmS4N9Dw=="
     },
+    "ts-pattern@5.8.0": {
+      "integrity": "sha512-kIjN2qmWiHnhgr5DAkAafF9fwb0T5OhMVSWrm8XEdTFnX6+wfXwYOFjeF86UZ54vduqiR7BfqScFmXSzSaH8oA=="
+    },
     "tslib@2.8.1": {
       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w=="
     },
@@ -110,6 +114,7 @@
         "npm:@types/node@^24.0.10",
         "npm:dns-packet@^5.6.1",
         "npm:import-meta-ponyfill@^3.2.2",
+        "npm:ts-pattern@^5.8.0",
         "npm:zod@^3.25.74"
       ]
     }

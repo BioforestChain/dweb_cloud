@@ -129,8 +129,8 @@ export const registry = async (
   let lookupHostname = registryInfo.service.hostname ?? from_hostname;
   if (/^https?:\/\//.test(lookupHostname)) {
     lookupHostname = new URL(lookupHostname).hostname;
-  } else if (/[\/:]/.test(lookupHostname)) {
-    lookupHostname = lookupHostname.split(/[\/:]/)[0];
+  } else if (/[/:]/.test(lookupHostname)) {
+    lookupHostname = lookupHostname.split(/[/:]/)[0];
   }
   const registry_origin = `${gateway.protocol}//${from_hostname}:${gateway.port}`;
   const dnsRecord: DnsRecord = {

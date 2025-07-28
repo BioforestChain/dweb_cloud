@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import http from "node:http";
 import https from "node:https";
+import url from "node:url";
 import type { AddressInfo } from "node:net";
 import { z } from "zod";
 import type { DnsDB } from "./api/dns-table.mts";
@@ -9,30 +10,86 @@ import { fastDnsRecordByHostname, registry } from "./api/registry.mts";
 import { dnsRecordStringify } from "./helper/dns-record.mts";
 import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 export * from "./api/dns-table.mts";
+import { match, P } from "ts-pattern";
 declare const DWEB_CLOUD_DISABLE_MDNS: boolean | void;
 export const startGateway = async (
   signUtil: BFMetaSignUtil,
   db: DnsDB,
   options: {
-    host: string;
-    port: number;
     sep: string;
-    cert?: string;
-    key?: string;
+    gateway:
+      | {
+          protocol?: string;
+          hostname: string;
+          port?: number | string;
+        }
+      | string
+      | URL
+      | {
+          protocol?: string;
+          host: string;
+        };
+    local: {
+      https?: boolean;
+      cert?: string;
+      key?: string;
+      port?: number;
+    };
   },
 ): Promise<AddressInfo> => {
-  const { host, port } = options;
-  let origin = host;
-  if (false == origin.includes("://")) {
-    origin = "http://" + host;
-  }
-  const origin_url = new URL(origin);
+  const { gateway: gateway_origin, local } = options;
+
+  const gateway_origin_url = match(gateway_origin)
+    .with(P.string, (href) => new URL(href))
+    .with(P.instanceOf(URL), (v) => v)
+    .with(
+      {
+        protocol: P.string.optional(),
+        hostname: P.string,
+        port: P.string.or(P.number).optional(),
+      },
+      (origin) =>
+        new URL(
+          url.format({
+            protocol:
+              origin.protocol ??
+              (origin.hostname.endsWith(".local") ? "http:" : "https:"),
+            hostname: origin.hostname,
+            port: origin.port,
+          }),
+        ),
+    )
+    .with(
+      {
+        protocol: P.string.optional(),
+        host: P.string,
+      },
+      (origin) =>
+        new URL(
+          url.format({
+            protocol:
+              origin.protocol ??
+              (origin.host.endsWith(".local") ||
+              /\.local:\d+$/.test(origin.host)
+                ? "http:"
+                : "https:"),
+            host: origin.host,
+          }),
+        ),
+    )
+    .exhaustive();
+
   const gateway = {
-    protocol: origin_url.protocol,
-    hostname: origin_url.hostname,
-    port: origin_url.port ? +origin_url.port : port,
+    protocol: gateway_origin_url.protocol,
+    hostname: gateway_origin_url.hostname,
+    port: gateway_origin_url.port
+      ? +gateway_origin_url.port
+      : gateway_origin_url.protocol === "https:"
+      ? 443
+      : 80,
     sep: options.sep,
   };
+
   if (gateway.hostname.endsWith(".local")) {
     if (
       typeof DWEB_CLOUD_DISABLE_MDNS === "boolean" &&
@@ -59,10 +116,7 @@ export const startGateway = async (
       );
 
       // 设置允许的请求头
-      res.setHeader(
-        "Access-Control-Allow-Headers",
-        "Content-Type, Authorization, X-Dweb-PublicKey, X-Dweb-Timestamp, X-Dweb-Signature, X-Dweb-Cloud-Host, X-Dweb-Cloud-Origin, X-Dweb-Cloud-Noise, X-Dweb-Cloud-Algorithm, X-Dweb-Cloud-Public-Key, X-Dweb-Cloud-Signature,",
-      );
+      res.setHeader("Access-Control-Allow-Headers", "*");
 
       // 如果需要，允许携带凭证（如 cookie）
       res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -95,6 +149,12 @@ export const startGateway = async (
             headers: req.headers,
           },
           (forwarded_res) => {
+            const { headersDistinct } = forwarded_res;
+            for (const key in headersDistinct) {
+              res.setHeader(key, headersDistinct[key]);
+            }
+            res.statusCode = forwarded_res.statusCode;
+            res.statusMessage = forwarded_res.statusMessage;
             forwarded_res.pipe(res);
           },
         );
@@ -149,13 +209,13 @@ export const startGateway = async (
   };
 
   let server: https.Server | http.Server;
-  if (origin_url.protocol === "https:") {
+  if (local.https) {
     const cert_filename = z
       .string({ required_error: "https requires cert file" })
-      .parse(options.cert);
+      .parse(local.cert);
     const key_filename = z
       .string({ required_error: "https requires key file" })
-      .parse(options.key);
+      .parse(local.key);
     server = https.createServer(
       {
         cert: fs.readFileSync(cert_filename),
@@ -171,11 +231,16 @@ export const startGateway = async (
     job.reject(err);
     console.error("Dweb Gateway Error:", err);
   });
-  server.listen({ port: gateway.port }, () => {
+  const bindPort = local.port ?? gateway.port;
+  server.listen({ port: bindPort }, () => {
     const addressInfo = server.address() as AddressInfo;
     job.resolve(addressInfo);
     console.info(
-      `Dweb Gateway Server Listening.\n--gateway=http://${gateway.hostname}:${gateway.port}/`,
+      [
+        `Dweb Gateway Server Listening.`,
+        `local: http://localhost:${bindPort}/`,
+        `gateway: ${gateway_origin_url.href}`,
+      ].join("\n"),
     );
   });
   return job.promise;
