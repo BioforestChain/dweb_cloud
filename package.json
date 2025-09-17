@@ -5,12 +5,12 @@
   "author": "Gaubee",
   "license": "MIT",
   "dependencies": {
-    "@bfmeta/sign-util": "^2.0.1",
-    "@gaubee/util": "^0.34.0",
+    "@bfmeta/sign-util": "^2.1.1",
+    "@gaubee/util": "^0.35.1",
     "dns-packet": "^5.6.1",
-    "import-meta-ponyfill": "^3.2.2",
+    "import-meta-ponyfill": "^3.3.1",
     "ts-pattern": "^5.8.0",
-    "zod": "^3.25.74"
+    "zod": "^4.1.9"
   },
   "devDependencies": {
     "@types/dns-packet": "^5.6.5",
