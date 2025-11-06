@@ -126,7 +126,10 @@ export const startGateway = async (
       return;
     }
     try {
-      let headerHost = req.headers["x-dweb-cloud-host"] ?? req.headers.host;
+      let headerHost =
+        req.headers["x-dweb-cloud-host"] ??
+        req.headers["x-host"] ??
+        req.headers.host;
       if (Array.isArray(headerHost)) {
         headerHost = headerHost[0];
       }
