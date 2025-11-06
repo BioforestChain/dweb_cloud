@@ -7,7 +7,6 @@ import {
   type TxtAnswer,
 } from "../multicast-dns/index.mts";
 import { Buffer } from "node:buffer";
-import { HealthChecker } from "./health.mts";
 import { getWlanIpv4List } from "./network.mts";
 import type {
   RemoteInfo,
@@ -44,7 +43,6 @@ export class MdnsServer {
     this.suffix_host = `.${hostname}.local`;
     this.ipv4List = getWlanIpv4List();
     this.setupMdnsListeners();
-    this.startHealthCheck();
   }
 
   private setupMdnsListeners() {
@@ -275,21 +273,6 @@ export class MdnsServer {
     const packet = this.createResponsePacket(service);
     console.log("广播服务:", packet);
     this.mdns.respond(packet);
-  }
-
-  private startHealthCheck() {
-    if (this.checkInterval !== null) {
-      return;
-    }
-
-    const healthChecker = new HealthChecker();
-    this.checkInterval = setInterval(async () => {
-      for (const [serviceId, service] of this.services) {
-        const health = await healthChecker.checkServiceHealth(service);
-        this.healthStatus.set(serviceId, health);
-        this.onHealthCheck.emit({ serviceId, health });
-      }
-    }, this.checkIntervalMs);
   }
 
   public registerService(service: ServiceDiscovery) {

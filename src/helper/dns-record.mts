@@ -12,7 +12,7 @@ export const $DnsRecordLookup: z.ZodObject<{
   family: z.union([z.literal(4), z.literal(6)]),
   ttl: z.number(),
 });
-export type DnsRecordLookup = typeof $DnsRecordLookup._type; //
+export type DnsRecordLookup = z.TypeOf<typeof $DnsRecordLookup>; //
 export const $DnsRecord: z.ZodObject<{
   mode: z.ZodLiteral<"http">;
   origin: z.ZodString;
@@ -32,7 +32,7 @@ export const $DnsRecord: z.ZodObject<{
   publicKey: z_buffer,
   peerAddress: z.string(),
 });
-export type DnsRecord = typeof $DnsRecord._type; //
+export type DnsRecord = z.TypeOf<typeof $DnsRecord>; //
 
 export const $DnsAddressRecord: z.ZodObject<{
   mode: z.ZodLiteral<"address">;
@@ -41,7 +41,7 @@ export const $DnsAddressRecord: z.ZodObject<{
   mode: z.literal("address"),
   hostname: z.string(),
 });
-export type DnsAddressRecord = typeof $DnsAddressRecord._type; //
+export type DnsAddressRecord = z.TypeOf<typeof $DnsAddressRecord>; //
 
 export const dnsRecordStringify: (data: DnsRecord) => string = (data) => {
   const json = JSON.stringify(

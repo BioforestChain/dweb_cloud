@@ -9,15 +9,16 @@ import { z_buffer, z_url } from "./helper/z-custom.mts";
 import type { BFMetaSignUtil } from "@bfmeta/sign-util";
 import type { PromiseMaybe } from "@gaubee/util";
 export type { DnsRecord };
+
 export const $RegistryArgs: z.ZodObject<{
   gateway: ZodUrl;
   gateway_sep: z.ZodString;
   keypair: z.ZodUnion<
     [z.ZodString, z.ZodObject<{ privateKey: ZodBuffer; publicKey: ZodBuffer }>]
   >;
-  algorithm: z.ZodEnum<["bioforestchain"]>;
+  algorithm: z.ZodEnum<z.util.ToEnum<"bioforestchain">>;
   service: z.ZodObject<{
-    mode: z.ZodEnum<["http"]>;
+    mode: z.ZodEnum<z.util.ToEnum<"http">>;
     hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     port: z.ZodNumber;
   }>;
@@ -35,7 +36,7 @@ export const $RegistryArgs: z.ZodObject<{
     port: z.number(),
   }),
 });
-export type RegistryArgs = typeof $RegistryArgs._type;
+export type RegistryArgs = z.TypeOf<typeof $RegistryArgs>;
 /**
  * 注册接口
  * @param args
@@ -98,7 +99,7 @@ export const registry = async (
     customFetch(api_url, {
       method: method,
       headers: headers,
-      body: body,
+      body: body as BodyInit,
     });
   const parseRegistry = async (
     res: PromiseMaybe<Response> = fetchRegistry(),

@@ -13,10 +13,9 @@ export const query = async (
   const address = z.string().nullable().parse(qs.get("address"));
   const addressInfo = address ? await db.addressTable.get(address) : undefined;
 
-  const hostname = addressInfo?.hostname ??
-    z
-      .string({ required_error: "required params hostname" })
-      .parse(qs.get("hostname"));
+  const hostname =
+    addressInfo?.hostname ??
+    z.string({ error: "required params hostname" }).parse(qs.get("hostname"));
 
   const info = await db.dnsTable.get(hostname);
 

@@ -20,11 +20,11 @@ export const $RegistryInfo: z.ZodObject<{
   auth: z.ZodUnion<
     [
       z.ZodObject<{
-        algorithm: z.ZodEnum<["bioforestchain"]>;
+        algorithm: z.ZodEnum<z.util.ToEnum<"bioforestchain">>;
         publicKey: z.ZodString;
       }>,
       z.ZodObject<{
-        algorithm: z.ZodEnum<["web3"]>;
+        algorithm: z.ZodEnum<z.util.ToEnum<"web3">>;
         publicKey: z.ZodString;
       }>,
     ]
@@ -32,13 +32,13 @@ export const $RegistryInfo: z.ZodObject<{
   service: z.ZodUnion<
     [
       z.ZodObject<{
-        mode: z.ZodEnum<["http"]>;
+        mode: z.ZodEnum<z.util.ToEnum<"http">>;
         hostname: z.ZodOptional<z.ZodNullable<z.ZodString>>;
         port: z.ZodNumber;
       }>,
       z.ZodObject<{
-        mode: z.ZodEnum<["vm"]>;
-        type: z.ZodEnum<["script", "module"]>;
+        mode: z.ZodEnum<z.util.ToEnum<"vm">>;
+        type: z.ZodEnum<z.util.ToEnum<"script" | "module">>;
         href: z.ZodString;
       }>,
     ]
@@ -72,7 +72,7 @@ export const $RegistryInfo: z.ZodObject<{
     }),
   ]),
 });
-export type RegistryInfo = typeof $RegistryInfo._type;
+export type RegistryInfo = z.TypeOf<typeof $RegistryInfo>;
 export type GatewayConfig = {
   protocol: string;
   hostname: string;

@@ -8,7 +8,7 @@ import { bfmetaSignUtil } from "./helper/bfmeta-sign-util.mts";
 if (import_meta_ponyfill(import.meta).main) {
   setupVerbose();
   const cliArgs = parseArgs(getCliArgs(), {
-    string: ["host", "port", "cert", "key"],
+    string: ["host", "hostname", "port", "cert", "key"],
     alias: {
       host: "h",
       port: "p",
@@ -22,5 +22,6 @@ if (import_meta_ponyfill(import.meta).main) {
     host,
     port,
     sep: "-",
-  });
+    // deno-lint-ignore no-explicit-any
+  } as any);
 }

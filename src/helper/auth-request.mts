@@ -59,24 +59,24 @@ export const verifyRequest = (
     safe_req_url = pathname + search;
   }
   const to_hostname = z
-    .string({ required_error: "no found header x-dweb-cloud-host" })
+    .string({ error: "no found header x-dweb-cloud-host" })
     .parse(req_headers.get("x-dweb-cloud-host"));
   const from_hostname = z
-    .string({ required_error: "no found header x-dweb-cloud-origin" })
+    .string({ error: "no found header x-dweb-cloud-origin" })
     .parse(req_headers.get("x-dweb-cloud-origin"))
     .split("://")[1];
   const noise = z
-    .string({ required_error: "no found header x-dweb-cloud-noise" })
+    .string({ error: "no found header x-dweb-cloud-noise" })
     .parse(req_headers.get("x-dweb-cloud-noise"));
 
   const publicKey = safeBufferFrom(
     z
-      .string({ required_error: "no found header x-dweb-cloud-public-key" })
+      .string({ error: "no found header x-dweb-cloud-public-key" })
       .parse(req_headers.get("x-dweb-cloud-public-key")),
   );
   const signature = safeBufferFrom(
     z
-      .string({ required_error: "no found header x-dweb-cloud-signature" })
+      .string({ error: "no found header x-dweb-cloud-signature" })
       .parse(req_headers.get("x-dweb-cloud-signature")),
   );
   const verify = async () => {
@@ -122,7 +122,7 @@ export const authRequestWithBody = async (
   to_hostname: string;
 }> => {
   const algorithm = z
-    .string({ required_error: "require algorithm" })
+    .string({ error: "require algorithm" })
     .parse(req.headers["x-dweb-cloud-algorithm"]);
   if (algorithm !== "bioforestchain") {
     throw new ResponseError(

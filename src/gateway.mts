@@ -85,8 +85,8 @@ export const startGateway = async (
     port: gateway_origin_url.port
       ? +gateway_origin_url.port
       : gateway_origin_url.protocol === "https:"
-      ? 443
-      : 80,
+        ? 443
+        : 80,
     sep: options.sep,
   };
 
@@ -126,13 +126,12 @@ export const startGateway = async (
       return;
     }
     try {
+      let headerHost = req.headers["x-dweb-cloud-host"] ?? req.headers.host;
+      if (Array.isArray(headerHost)) {
+        headerHost = headerHost[0];
+      }
       /// 网关转发
-      const hostname = (
-        req.headersDistinct["x-dweb-cloud-host"] ?? req.headersDistinct.host
-      )
-        ?.at(0)
-        ?.split(":")
-        .at(0);
+      const hostname = headerHost?.split(":").at(0);
       if (hostname && (await db.dnsTable.has(hostname))) {
         const { dnsRecord, lookup } = await fastDnsRecordByHostname(
           db,
@@ -149,12 +148,16 @@ export const startGateway = async (
             headers: req.headers,
           },
           (forwarded_res) => {
-            const { headersDistinct } = forwarded_res;
-            for (const key in headersDistinct) {
-              res.setHeader(key, headersDistinct[key]);
+            const { headers } = forwarded_res;
+            for (const key in headers) {
+              res.setHeader(key, headers[key]!);
             }
-            res.statusCode = forwarded_res.statusCode;
-            res.statusMessage = forwarded_res.statusMessage;
+            res.writeHead(
+              forwarded_res.statusCode ?? 500,
+              forwarded_res.statusMessage,
+            );
+            // res.statusCode = forwarded_res.statusCode;
+            // res.statusMessage = forwarded_res.statusMessage;
             forwarded_res.pipe(res);
           },
         );
@@ -203,7 +206,7 @@ export const startGateway = async (
     } catch (e) {
       if (false === res.writableEnded) {
         res.statusCode = 500;
-        res.end(e instanceof Error ? e.stack ?? e.message : String(e));
+        res.end(e instanceof Error ? (e.stack ?? e.message) : String(e));
       }
     }
   };
@@ -211,10 +214,10 @@ export const startGateway = async (
   let server: https.Server | http.Server;
   if (local.https) {
     const cert_filename = z
-      .string({ required_error: "https requires cert file" })
+      .string({ error: "https requires cert file" })
       .parse(local.cert);
     const key_filename = z
-      .string({ required_error: "https requires key file" })
+      .string({ error: "https requires key file" })
       .parse(local.key);
     server = https.createServer(
       {
